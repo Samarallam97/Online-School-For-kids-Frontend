@@ -22,6 +22,9 @@ import StudentProfilePage from "./pages/profile/StudentProfilePage";
 // spcialist pages
 import SpecialistProfilePage from "./pages/profile/SpecialistProfilePage";
 
+// Admin Pages
+import UserManagementPage from "./pages/admin/UserManagementPage";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -44,6 +47,7 @@ const App = () => (
           <Route path="/creator/profile" element={<CreatorProfilePage />} />
 
           {/* Admin Routes */}
+          <Route path="/admin/users" element={<UserManagementPage />} />
           <Route path="/admin/profile" element={<AdminProfilePage />} />
 
           {/* Parent Routes */}
