@@ -17,6 +17,7 @@ import EmailVerificationPage from "./pages/auth/EmailVerificationPage";
 import AdminProfilePage from "./pages/profile/AdminProfilePage";
 import CreatorProfilePage from "./pages/profile/CreatorProfilePage";
 import ParentProfilePage from "./pages/profile/ParentProfilePage";
+import StudentProfilePage from "./pages/profile/StudentProfilePage";
 
 // spcialist pages
 import SpecialistProfilePage from "./pages/profile/SpecialistProfilePage";
@@ -53,6 +54,9 @@ const App = () => (
             path="/specialist/profile"
             element={<SpecialistProfilePage />}
           />
+
+          {/* Student Dashboard Routes */}
+          <Route path="/profile" element={<StudentProfilePage />} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>
