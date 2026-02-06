@@ -18,6 +18,9 @@ import AdminProfilePage from "./pages/profile/AdminProfilePage";
 import CreatorProfilePage from "./pages/profile/CreatorProfilePage";
 import ParentProfilePage from "./pages/profile/ParentProfilePage";
 
+// spcialist pages
+import SpecialistProfilePage from "./pages/profile/SpecialistProfilePage";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -44,6 +47,12 @@ const App = () => (
 
           {/* Parent Routes */}
           <Route path="/parent/profile" element={<ParentProfilePage />} />
+
+          {/* Specialist Routes */}
+          <Route
+            path="/specialist/profile"
+            element={<SpecialistProfilePage />}
+          />
 
           <Route path="*" element={<NotFound />} />
         </Routes>
