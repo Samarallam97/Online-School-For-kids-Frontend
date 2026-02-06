@@ -15,6 +15,7 @@ import EmailVerificationPage from "./pages/auth/EmailVerificationPage";
 
 // Profile Pages
 import AdminProfilePage from "./pages/profile/AdminProfilePage";
+import CreatorProfilePage from "./pages/profile/CreatorProfilePage";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,9 @@ const App = () => (
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/verify-email" element={<EmailVerificationPage />} />
+
+          {/* Creator Routes */}
+          <Route path="/creator/profile" element={<CreatorProfilePage />} />
 
           {/* Admin Routes */}
           <Route path="/admin/profile" element={<AdminProfilePage />} />
