@@ -28,6 +28,11 @@ import UserManagementPage from "./pages/admin/UserManagementPage";
 // Dashboard Pages
 import CourseProgressPage from "./pages/dashboard/CourseProgressPage";
 
+// Cart & Checkout Pages
+import CartPage from "./pages/cart/CartPage";
+import CheckoutPage from "./pages/checkout/CheckoutPage";
+import OrderConfirmationPage from "./pages/checkout/OrderConfirmationPage";
+
 // Course Pages
 import CoursesCatalogPage from "./pages/courses/CoursesCatalogPage";
 import CourseDetailPage from "./pages/courses/CourseDetailPage";
@@ -72,6 +77,14 @@ const App = () => (
 
           {/* Student Dashboard Routes */}
           <Route path="student/profile" element={<StudentProfilePage />} />
+
+          {/* Cart & Checkout Routes */}
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route
+            path="/order-confirmation"
+            element={<OrderConfirmationPage />}
+          />
 
           {/* Course Routes */}
           <Route path="/courses" element={<CoursesCatalogPage />} />
