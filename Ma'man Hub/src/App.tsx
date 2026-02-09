@@ -24,6 +24,11 @@ import SpecialistProfilePage from "./pages/profile/SpecialistProfilePage";
 
 // Admin Pages
 import UserManagementPage from "./pages/admin/UserManagementPage";
+import ContentModerationPage from "./pages/admin/ContentModerationPage";
+
+// Creator Pages
+import UploadVideoPage from "./pages/creator/UploadVideoPage";
+import CreatorDashboardPage from "./pages/creator/CreatorDashboardPage";
 
 // Dashboard Pages
 import CourseProgressPage from "./pages/dashboard/CourseProgressPage";
@@ -40,6 +45,10 @@ import CoursePlayerPage from "./pages/courses/CoursePlayerPage";
 
 // Quiz Pages
 import QuizPage from "./pages/quiz/QuizPage";
+
+// Live Session Pages
+import LiveSessionPage from "./pages/live/LiveSessionPage";
+import GoLivePage from "./pages/creator/GoLivePage";
 
 const queryClient = new QueryClient();
 
@@ -60,11 +69,15 @@ const App = () => (
           <Route path="/verify-email" element={<EmailVerificationPage />} />
 
           {/* Creator Routes */}
+          <Route path="/creator" element={<CreatorDashboardPage />} />
           <Route path="/creator/profile" element={<CreatorProfilePage />} />
+          <Route path="/creator/upload" element={<UploadVideoPage />} />
+          <Route path="/creator/go-live" element={<GoLivePage />} />
 
           {/* Admin Routes */}
           <Route path="/admin/users" element={<UserManagementPage />} />
           <Route path="/admin/profile" element={<AdminProfilePage />} />
+          <Route path="/admin/moderation" element={<ContentModerationPage />} />
 
           {/* Parent Routes */}
           <Route path="/parent/profile" element={<ParentProfilePage />} />
@@ -85,6 +98,9 @@ const App = () => (
             path="/order-confirmation"
             element={<OrderConfirmationPage />}
           />
+
+          {/* Live Session Routes */}
+          <Route path="/live/:sessionId" element={<LiveSessionPage />} />
 
           {/* Course Routes */}
           <Route path="/courses" element={<CoursesCatalogPage />} />
