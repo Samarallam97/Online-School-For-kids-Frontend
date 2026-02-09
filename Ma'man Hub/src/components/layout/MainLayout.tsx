@@ -1,4 +1,4 @@
-// if logged in
+// // if logged in
 // import { ReactNode, useState } from "react";
 // import { Link, useNavigate, useLocation } from "react-router-dom";
 // import { motion, AnimatePresence } from "framer-motion";
@@ -228,6 +228,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Home,
   BookOpen,
+  Layers,
   ShoppingCart,
   MessageSquare,
   User,
@@ -253,6 +254,7 @@ interface MainLayoutProps {
 const navigation = [
   // { name: "Home", href: "/", icon: Home },
   // { name: "Courses", href: "/courses", icon: BookOpen },
+  // { name: "Modules", href: "/modules", icon: Layers },
   // { name: "My Learning", href: "/dashboard", icon: GraduationCap },
   // { name: "Messages", href: "/messages", icon: MessageSquare },
 ];

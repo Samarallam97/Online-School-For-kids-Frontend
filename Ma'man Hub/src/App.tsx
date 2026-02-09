@@ -24,6 +24,31 @@ import SpecialistProfilePage from "./pages/profile/SpecialistProfilePage";
 
 // Admin Pages
 import UserManagementPage from "./pages/admin/UserManagementPage";
+import ContentModerationPage from "./pages/admin/ContentModerationPage";
+
+// Creator Pages
+import UploadVideoPage from "./pages/creator/UploadVideoPage";
+import CreatorDashboardPage from "./pages/creator/CreatorDashboardPage";
+
+// Dashboard Pages
+import CourseProgressPage from "./pages/dashboard/CourseProgressPage";
+
+// Cart & Checkout Pages
+import CartPage from "./pages/cart/CartPage";
+import CheckoutPage from "./pages/checkout/CheckoutPage";
+import OrderConfirmationPage from "./pages/checkout/OrderConfirmationPage";
+
+// Course Pages
+import CoursesCatalogPage from "./pages/courses/CoursesCatalogPage";
+import CourseDetailPage from "./pages/courses/CourseDetailPage";
+import CoursePlayerPage from "./pages/courses/CoursePlayerPage";
+
+// Quiz Pages
+import QuizPage from "./pages/quiz/QuizPage";
+
+// Live Session Pages
+import LiveSessionPage from "./pages/live/LiveSessionPage";
+import GoLivePage from "./pages/creator/GoLivePage";
 
 const queryClient = new QueryClient();
 
@@ -44,11 +69,15 @@ const App = () => (
           <Route path="/verify-email" element={<EmailVerificationPage />} />
 
           {/* Creator Routes */}
+          <Route path="/creator" element={<CreatorDashboardPage />} />
           <Route path="/creator/profile" element={<CreatorProfilePage />} />
+          <Route path="/creator/upload" element={<UploadVideoPage />} />
+          <Route path="/creator/go-live" element={<GoLivePage />} />
 
           {/* Admin Routes */}
           <Route path="/admin/users" element={<UserManagementPage />} />
           <Route path="/admin/profile" element={<AdminProfilePage />} />
+          <Route path="/admin/moderation" element={<ContentModerationPage />} />
 
           {/* Parent Routes */}
           <Route path="/parent/profile" element={<ParentProfilePage />} />
@@ -61,6 +90,30 @@ const App = () => (
 
           {/* Student Dashboard Routes */}
           <Route path="student/profile" element={<StudentProfilePage />} />
+
+          {/* Cart & Checkout Routes */}
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route
+            path="/order-confirmation"
+            element={<OrderConfirmationPage />}
+          />
+
+          {/* Live Session Routes */}
+          <Route path="/live/:sessionId" element={<LiveSessionPage />} />
+
+          {/* Course Routes */}
+          <Route path="/courses" element={<CoursesCatalogPage />} />
+          <Route path="/courses/:courseId" element={<CourseDetailPage />} />
+          <Route
+            path="/course/:courseId/learn"
+            element={<CoursePlayerPage />}
+          />
+          <Route
+            path="/course/:courseId/progress"
+            element={<CourseProgressPage />}
+          />
+          <Route path="/course/:courseId/quiz/:quizId" element={<QuizPage />} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>
