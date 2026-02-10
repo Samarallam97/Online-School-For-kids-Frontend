@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { authService } from "@/services/authService";
 import { PasswordStrength } from "@/components/ui/PasswordStrength";
 
 const resetPasswordSchema = z
@@ -43,35 +43,23 @@ export default function ResetPasswordPage() {
 
   const password = watch("password");
 
-  useEffect(() => {
-    // Check if we have the necessary tokens
-    const accessToken = searchParams.get("access_token");
-    const refreshToken = searchParams.get("refresh_token");
-    
-    if (accessToken && refreshToken) {
-      supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      });
-    }
-  }, [searchParams]);
-
   const onSubmit = async (data: ResetPasswordFormData) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: data.password,
-      });
-
-      if (error) {
+      // Get the token from URL parameters
+      const token = searchParams.get("token");
+      
+      if (!token) {
         toast({
           title: "Error",
-          description: error.message,
+          description: "Invalid or missing reset token. Please request a new password reset link.",
           variant: "destructive",
         });
         return;
       }
 
+      await authService.resetPassword(token, data.password);
+      
       setIsSuccess(true);
       setTimeout(() => {
         navigate("/login");
@@ -79,7 +67,7 @@ export default function ResetPasswordPage() {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+        description: error.response?.data?.message || "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -122,7 +110,7 @@ export default function ResetPasswordPage() {
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Enter your new password"
+                    placeholder="••••••••"
                     className="pl-10 pr-10 h-12"
                     {...register("password")}
                   />
@@ -151,15 +139,13 @@ export default function ResetPasswordPage() {
                   <Input
                     id="confirmPassword"
                     type="password"
-                    placeholder="Confirm your new password"
+                    placeholder="••••••••"
                     className="pl-10 h-12"
                     {...register("confirmPassword")}
                   />
                 </div>
                 {errors.confirmPassword && (
-                  <p className="text-sm text-destructive">
-                    {errors.confirmPassword.message}
-                  </p>
+                  <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
                 )}
               </div>
 
@@ -188,13 +174,15 @@ export default function ResetPasswordPage() {
               </div>
               <h1 className="text-3xl font-bold font-display">Password reset!</h1>
               <p className="mt-2 text-muted-foreground">
-                Your password has been successfully reset. You'll be redirected to
-                the login page shortly.
+                Your password has been successfully reset. You'll be redirected to the login page shortly.
               </p>
 
-              <Link to="/login">
-                <Button className="w-full h-12 mt-8">Continue to login</Button>
-              </Link>
+              <Button
+                className="w-full h-12 mt-8"
+                onClick={() => navigate("/login")}
+              >
+                Continue to login
+              </Button>
             </motion.div>
           </>
         )}
