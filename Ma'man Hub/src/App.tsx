@@ -49,6 +49,7 @@ import QuizPage from "./pages/quiz/QuizPage";
 // Live Session Pages
 import LiveSessionPage from "./pages/live/LiveSessionPage";
 import GoLivePage from "./pages/creator/GoLivePage";
+import AcceptInvitePage from "./pages/profile/AcceptInvitePage";
 
 const queryClient = new QueryClient();
 
@@ -90,6 +91,8 @@ const App = () => (
 
           {/* Student Dashboard Routes */}
           <Route path="student/profile" element={<StudentProfilePage />} />
+          <Route path="student/accept-invite" element={<AcceptInvitePage />} />
+
 
           {/* Cart & Checkout Routes */}
           <Route path="/cart" element={<CartPage />} />
