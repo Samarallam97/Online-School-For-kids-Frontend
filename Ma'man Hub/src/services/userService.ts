@@ -69,6 +69,33 @@ export interface PaymentMethod {
 }
 
 
+export interface UploadProfilePictureResponse {
+  profilePictureUrl: string;
+  message: string;
+}
+
+export interface PublicProfileDto {
+  id: string;
+  fullName: string;
+  role: string;
+  profilePictureUrl?: string;
+  bio?: string;
+  country?: string;
+  joinedDate?: string;
+  enrolledCourses: number;
+  achievements: number;
+  totalHoursLearned: number;
+  recentAchievements?: Array<{
+    name: string;
+    earnedDate: string;
+  }>;
+  enrolledCoursesList?: Array<{
+    name: string;
+    instructor: string;
+    progress?: number;
+  }>;
+}
+
 export const userService = {
 
 
@@ -124,6 +151,22 @@ export const userService = {
 
     removePaymentMethod: async (paymentMethodId: string): Promise<void> => {
         await api.delete(`/User/payment-methods/${paymentMethodId}`);
-    }
+    },
+    uploadProfilePicture: async (formData: FormData): Promise<UploadProfilePictureResponse> => {
+    const response = await api.post('/User/profile-picture', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
 
+  deleteProfilePicture: async (): Promise<void> => {
+    await api.delete('/User/profile-picture');
+  },
+
+    getPublicProfile: async (userId: string): Promise<PublicProfileDto> => {
+    const response = await api.get(`/User/${userId}/public-profile`);
+    return response.data;
+  },
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import {
   Card,
@@ -18,7 +18,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
+import { userService, ProfileDto } from "@/services/userService";
 
 // Import sub-components
 import { PersonalInfoTab } from "@/components/profile/parent/PersonalInfoTab";
@@ -27,13 +27,14 @@ import { NotificationsTab } from "@/components/profile/parent/NotificationsTab";
 import { BillingTab } from "@/components/profile/parent/BillingTab";
 import { CoursesTab } from "@/components/profile/parent/CoursesTab";
 import { AchievementsTab } from "@/components/profile/parent/AchievementsTab";
-import { userService, ProfileDto } from "@/services/userService";
 
 export default function ParentProfilePage() {
   const { toast } = useToast();
   const [userData, setUserData] = useState<ProfileDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("profile");
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch user profile on mount
   useEffect(() => {
@@ -55,6 +56,67 @@ export default function ParentProfilePage() {
 
     fetchProfile();
   }, [toast]);
+
+  const handleProfilePictureClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleProfilePictureChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid File",
+        description: "Please select an image file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please select an image smaller than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsUploadingImage(true);
+      
+      const formData = new FormData();
+      formData.append('profilePicture', file);
+
+      const response = await userService.uploadProfilePicture(formData);
+      
+      // Update local state with new profile picture URL
+      setUserData(prev => prev ? {
+        ...prev,
+        profilePictureUrl: response.profilePictureUrl
+      } : null);
+
+      toast({
+        title: "Success",
+        description: "Profile picture updated successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to upload profile picture",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingImage(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
 
   const getInitials = (): string => {
     if (!userData?.fullName) return "U";
@@ -102,12 +164,25 @@ export default function ParentProfilePage() {
                     {getInitials()}
                   </AvatarFallback>
                 </Avatar>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleProfilePictureChange}
+                />
                 <Button
                   size="icon"
                   variant="secondary"
                   className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full"
+                  onClick={handleProfilePictureClick}
+                  disabled={isUploadingImage}
                 >
-                  <Camera className="h-4 w-4" />
+                  {isUploadingImage ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Camera className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
               <div className="flex-1 text-center sm:text-left">
@@ -130,11 +205,6 @@ export default function ParentProfilePage() {
                     <Clock className="mr-1 h-3 w-3" />
                     {userData.totalHoursLearned || 0} Hours Learned
                   </Badge>
-                  {/* <Badge variant="secondary">
-                    <Shield className="mr-1 h-3 w-3" />
-                    Parental Controls{" "}
-                    {userData.parentalControlsActive ? "Active" : "Inactive"}
-                  </Badge> */}
                 </div>
               </div>
             </div>
