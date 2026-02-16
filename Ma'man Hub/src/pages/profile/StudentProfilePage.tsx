@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import {
   Card,
@@ -15,11 +15,11 @@ import {
   Clock,
   Loader2,
   MessageSquare,
-  Share2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { userService, ProfileDto } from "@/services/userService";
 import { Link, useLocation } from "react-router-dom";
+import { ShareProfileDialog } from "@/components/profile/ShareProfileDialog";
 
 // Import sub-components
 import { PersonalInfoTab } from "@/components/profile/student/StudentPersonalInfoTab";
@@ -35,6 +35,8 @@ export default function StudentProfilePage() {
   const [userData, setUserData] = useState<ProfileDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentTab, setCurrentTab] = useState("profile");
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check if redirected from accept invite
   const showParentLinked = location.state?.showParentLinked || false;
@@ -60,21 +62,64 @@ export default function StudentProfilePage() {
     fetchProfile();
   }, [toast]);
 
-  const handleShare = async () => {
-    const profileUrl = `${window.location.origin}/profile/${userData?.id}`;
+  const handleProfilePictureClick = () => {
+    fileInputRef.current?.click();
+  };
 
-    try {
-      await navigator.clipboard.writeText(profileUrl);
+  const handleProfilePictureChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
       toast({
-        title: "Link Copied",
-        description: "Profile link copied to clipboard!",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to copy link",
+        title: "Invalid File",
+        description: "Please select an image file",
         variant: "destructive",
       });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please select an image smaller than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsUploadingImage(true);
+      
+      const formData = new FormData();
+      formData.append('profilePicture', file);
+
+      const response = await userService.uploadProfilePicture(formData);
+      
+      // Update local state with new profile picture URL
+      setUserData(prev => prev ? {
+        ...prev,
+        profilePictureUrl: response.profilePictureUrl
+      } : null);
+
+      toast({
+        title: "Success",
+        description: "Profile picture updated successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to upload profile picture",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingImage(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -121,12 +166,25 @@ export default function StudentProfilePage() {
                     {getInitials()}
                   </AvatarFallback>
                 </Avatar>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleProfilePictureChange}
+                />
                 <Button
                   size="icon"
                   variant="secondary"
                   className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full"
+                  onClick={handleProfilePictureClick}
+                  disabled={isUploadingImage}
                 >
-                  <Camera className="h-4 w-4" />
+                  {isUploadingImage ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Camera className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
               <div className="flex-1 text-center sm:text-left">
@@ -153,14 +211,10 @@ export default function StudentProfilePage() {
                     <MessageSquare className="h-4 w-4" />
                   </Button>
                 </Link>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleShare}
-                  title="Share Profile"
-                >
-                  <Share2 className="h-4 w-4" />
-                </Button>
+                <ShareProfileDialog
+                  userId={userData.id}
+                  userName={userData.fullName}
+                />
               </div>
             </div>
           </CardContent>

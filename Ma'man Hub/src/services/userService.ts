@@ -1,6 +1,34 @@
 
 import api from './api';
+import { WorkExperience } from './creatorService';
 
+
+export interface SocialLink {
+    id: string;
+    name: string;
+    value: string;
+}
+
+export interface NotificationPreferences {
+    progressUpdates: boolean;
+    weeklyReports: boolean;
+    achievementAlerts: boolean;
+    paymentReminders: boolean;
+
+    // Creator-specific
+    courseEnrollments?: boolean;
+    studentMessages?: boolean;
+    reviewNotifications?: boolean;
+    payoutAlerts?: boolean;
+}
+
+export interface PaymentMethod {
+    id: string;
+    type: string; // vodafone_cash, instapay, fawry, bank_account
+    displayInfo: string;
+    isDefault: boolean;
+    // isVerified: boolean;
+}
 
 export interface ProfileDto {
     id: string;
@@ -15,7 +43,7 @@ export interface ProfileDto {
     isFirstLogin: boolean;
     paymentMethods?: PaymentMethod[];
     notificationPreferences?: NotificationPreferences;
-
+    socialLinks?: SocialLink;
 
 
     // Student & Parent
@@ -29,13 +57,13 @@ export interface ProfileDto {
 
     // ContentCreator-specific
     isVerifiedCreator?: boolean;
-    expertise?: string[];
+    experiences?: WorkExperience[];
     totalCourses?: number;
     totalStudents?: number;
     totalRevenue?: number;
     averageRating?: number;
-    socialLinks?: any;
-    payoutSettings?: any;
+
+
 
     // Specialist-specific
     professionalTitle?: string;
@@ -49,25 +77,34 @@ export interface ProfileDto {
     studentsHelped?: number;
 }
 
-export interface NotificationPreferences {
-    progressUpdates: boolean;
-    weeklyReports: boolean;
-    achievementAlerts: boolean;
-    paymentReminders: boolean;
+
+export interface UploadProfilePictureDto {
+    profilePictureUrl: string;
+    message: string;
 }
 
-export interface PaymentMethod {
+export interface PublicProfileDto {
     id: string;
-    type: string; // vodafone_cash, instapay, fawry, bank_account
-    displayInfo: string; // Display text for the payment method
-    isDefault: boolean;
-    // Legacy card fields (for backward compatibility)
-    last4?: string;
-    brand?: string;
-    expiryMonth?: number;
-    expiryYear?: number;
+    fullName: string;
+    role: string;
+    profilePictureUrl?: string;
+    bio?: string;
+    country?: string;
+    joinedDate?: string;
+    enrolledCourses?: number;
+    achievements?: number;
+    totalHoursLearned?: number;
+    recentAchievements?: Array<{
+        name: string;
+        earnedDate: string;
+    }>;
+    enrolledCoursesList?: Array<{
+        name: string;
+        instructor: string;
+        progress?: number;
+    }>;
+    //TODO:: experience , social links
 }
-
 
 export const userService = {
 
@@ -101,7 +138,13 @@ export const userService = {
     },
 
     addPaymentMethod: async (paymentMethodData: {
-        type: 'vodafone_cash' | 'instapay' | 'fawry' | 'bank_account';
+        type: 'card' | 'vodafone_cash' | 'instapay' | 'fawry' | 'bank_account'; // Added 'card'
+        // Card
+        cardNumber?: string;
+        cardholderName?: string;
+        expiryMonth?: number;
+        expiryYear?: number;
+        cvv?: string;
         // Vodafone Cash
         phoneNumber?: string;
         // Instapay
@@ -124,6 +167,51 @@ export const userService = {
 
     removePaymentMethod: async (paymentMethodId: string): Promise<void> => {
         await api.delete(`/User/payment-methods/${paymentMethodId}`);
-    }
+    },
 
+    // requestPayoutVerification: async (payoutSettingId: string): Promise<void> => {
+    //     await api.post(`/User/payment-methods/${payoutSettingId}/request-verification`);
+    // },
+
+    uploadProfilePicture: async (formData: FormData): Promise<UploadProfilePictureDto> => {
+        const response = await api.post('/User/profile-picture', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    deleteProfilePicture: async (): Promise<void> => {
+        await api.delete('/User/profile-picture');
+    },
+    getSocialLinks: async (): Promise<SocialLink[]> => {
+        const response = await api.get('/ContentCreator/social-links');
+        return response.data;
+    },
+
+    addSocialLink: async (linkData: {
+        name: string;
+        value: string;
+    }): Promise<SocialLink> => {
+        const response = await api.post('/ContentCreator/social-links', linkData);
+        return response.data;
+    },
+
+    updateSocialLink: async (linkId: string, linkData: {
+        name: string;
+        value: string;
+    }): Promise<SocialLink> => {
+        const response = await api.put(`/ContentCreator/social-links/${linkId}`, linkData);
+        return response.data;
+    },
+
+    deleteSocialLink: async (linkId: string): Promise<void> => {
+        await api.delete(`/ContentCreator/social-links/${linkId}`);
+    },
+
+    getPublicProfile: async (userId: string): Promise<PublicProfileDto> => {
+        const response = await api.get(`/User/${userId}/public-profile`);
+        return response.data;
+    },
 }

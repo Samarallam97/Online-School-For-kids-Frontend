@@ -56,25 +56,74 @@ import {
   Smartphone,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { userService , PaymentMethod} from "@/services/userService";
+import { userService, PaymentMethod } from "@/services/userService";
 
 enum PaymentMethodType {
+  CARD = "card",
   VODAFONE_CASH = "vodafone_cash",
   INSTAPAY = "instapay",
   FAWRY = "fawry",
   BANK_ACCOUNT = "bank_account",
 }
 
+// Define which payment methods are available for each role
+const ROLE_PAYMENT_METHODS = {
+  Student: [
+    PaymentMethodType.CARD,
+    PaymentMethodType.VODAFONE_CASH,
+    PaymentMethodType.INSTAPAY,
+    PaymentMethodType.FAWRY,
+  ],
+  ContentCreator: [
+    PaymentMethodType.BANK_ACCOUNT,
+    PaymentMethodType.VODAFONE_CASH,
+    PaymentMethodType.INSTAPAY,
+    PaymentMethodType.FAWRY,
+  ],
+  Specialsit: [
+    PaymentMethodType.BANK_ACCOUNT,
+    PaymentMethodType.VODAFONE_CASH,
+    PaymentMethodType.INSTAPAY,
+    PaymentMethodType.FAWRY,
+  ],
+  Parent: [
+    PaymentMethodType.CARD,
+    PaymentMethodType.VODAFONE_CASH,
+    PaymentMethodType.INSTAPAY,
+    PaymentMethodType.FAWRY,
+  ],
+};
+
 export function BillingTab() {
   const { toast } = useToast();
+  const { user } = JSON.parse(localStorage.getItem("user")); 
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [isLoadingPayments, setIsLoadingPayments] = useState(true);
   const [isAddPaymentDialogOpen, setIsAddPaymentDialogOpen] = useState(false);
   const [isAddingPayment, setIsAddingPayment] = useState(false);
+  
+  // Get allowed payment methods for current user role
+  const allowedPaymentMethods = ROLE_PAYMENT_METHODS[user?.role as keyof typeof ROLE_PAYMENT_METHODS] || [];
+  
+  // Set initial payment type based on role
+  const getInitialPaymentType = () => {
+    if (allowedPaymentMethods.length === 0) return PaymentMethodType.CARD;
+    if (user?.role === 'Student' || user?.role === 'Parent') {
+      return PaymentMethodType.CARD;
+    }
+    return PaymentMethodType.BANK_ACCOUNT;
+  };
+  
   const [selectedPaymentType, setSelectedPaymentType] = useState<PaymentMethodType>(
-    PaymentMethodType.VODAFONE_CASH
+    getInitialPaymentType()
   );
+  
   const [newPaymentData, setNewPaymentData] = useState({
+    cardNumber: "",
+    cardholderName: "",
+    expiryMonth: "",
+    expiryYear: "",
+    cvv: "",
     vodafoneNumber: "",
     instapayId: "",
     fawryNumber: "",
@@ -83,6 +132,7 @@ export function BillingTab() {
     accountNumber: "",
     iban: "",
   });
+  
   const [paymentToRemove, setPaymentToRemove] = useState<PaymentMethod | null>(null);
   const [isRemovingPayment, setIsRemovingPayment] = useState(false);
   const [isSettingDefault, setIsSettingDefault] = useState<string | null>(null);
@@ -103,10 +153,55 @@ export function BillingTab() {
     fetchPaymentMethods();
   }, []);
 
+  // Helper to get appropriate card title/description based on role
+  const getCardContent = () => {
+    if (user?.role === 'Student' || user?.role === 'Parent') {
+      return {
+        title: "Payment Methods",
+        description: "Manage your payment methods for course purchases",
+        emptyMessage: "Add a payment method to purchase courses and subscriptions.",
+      };
+    }
+    return {
+      title: "Payout Methods",
+      description: "Manage how you receive your earnings",
+      emptyMessage: "Add a payout method to receive your earnings from courses.",
+    };
+  };
+
+  const content = getCardContent();
+
   const handleAddPaymentMethod = async () => {
     let paymentMethodData: any = { type: selectedPaymentType };
 
+    // Check if payment method is allowed for this role
+    if (!allowedPaymentMethods.includes(selectedPaymentType)) {
+      toast({
+        title: "Not Allowed",
+        description: `${getPaymentMethodLabel(selectedPaymentType)} is not available for ${user?.role}s`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     switch (selectedPaymentType) {
+      case PaymentMethodType.CARD:
+        if (!newPaymentData.cardNumber || !newPaymentData.cardholderName || 
+            !newPaymentData.expiryMonth || !newPaymentData.expiryYear || !newPaymentData.cvv) {
+          toast({
+            title: "Validation Error",
+            description: "Please fill in all card details",
+            variant: "destructive",
+          });
+          return;
+        }
+        paymentMethodData.cardNumber = newPaymentData.cardNumber.replace(/\s/g, '');
+        paymentMethodData.cardholderName = newPaymentData.cardholderName;
+        paymentMethodData.expiryMonth = parseInt(newPaymentData.expiryMonth);
+        paymentMethodData.expiryYear = parseInt(newPaymentData.expiryYear);
+        paymentMethodData.cvv = newPaymentData.cvv;
+        break;
+
       case PaymentMethodType.VODAFONE_CASH:
         if (!newPaymentData.vodafoneNumber) {
           toast({
@@ -165,6 +260,11 @@ export function BillingTab() {
       const newPaymentMethod = await userService.addPaymentMethod(paymentMethodData);
       setPaymentMethods([...paymentMethods, newPaymentMethod]);
       setNewPaymentData({
+        cardNumber: "",
+        cardholderName: "",
+        expiryMonth: "",
+        expiryYear: "",
+        cvv: "",
         vodafoneNumber: "",
         instapayId: "",
         fawryNumber: "",
@@ -175,8 +275,12 @@ export function BillingTab() {
       });
       setIsAddPaymentDialogOpen(false);
       toast({
-        title: "Payment Method Added",
-        description: "Your payment method has been added successfully.",
+        title: user?.role === 'Student' || user?.role === 'Parent' 
+          ? "Payment Method Added" 
+          : "Payout Method Added",
+        description: user?.role === 'Student' || user?.role === 'Parent'
+          ? "Your payment method has been added successfully."
+          : "Your payout method has been added successfully.",
       });
     } catch (error: any) {
       toast({
@@ -236,6 +340,8 @@ export function BillingTab() {
 
   const getPaymentMethodIcon = (type: string) => {
     switch (type) {
+      case PaymentMethodType.CARD:
+        return <CreditCard className="h-5 w-5" />;
       case PaymentMethodType.VODAFONE_CASH:
         return <Smartphone className="h-5 w-5" />;
       case PaymentMethodType.INSTAPAY:
@@ -251,6 +357,8 @@ export function BillingTab() {
 
   const getPaymentMethodLabel = (type: string) => {
     switch (type) {
+      case PaymentMethodType.CARD:
+        return "Credit/Debit Card";
       case PaymentMethodType.VODAFONE_CASH:
         return "Vodafone Cash";
       case PaymentMethodType.INSTAPAY:
@@ -270,9 +378,9 @@ export function BillingTab() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
-            Billing & Payments
+            {content.title}
           </CardTitle>
-          <CardDescription>Manage your payment methods</CardDescription>
+          <CardDescription>{content.description}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {isLoadingPayments ? (
@@ -354,30 +462,35 @@ export function BillingTab() {
                 <CreditCard className="h-8 w-8 text-muted-foreground" />
               </div>
               <h3 className="text-lg font-semibold mb-2">
-                No payment methods
+                No {user?.role === 'Student' || user?.role === 'Parent' ? 'payment' : 'payout'} methods
               </h3>
               <p className="text-muted-foreground mb-6 max-w-sm">
-                Add a payment method to manage subscriptions and purchases.
+                {content.emptyMessage}
               </p>
             </div>
           )}
+          
           <Dialog open={isAddPaymentDialogOpen} onOpenChange={setIsAddPaymentDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="w-full">
                 <Plus className="mr-2 h-4 w-4" />
-                Add Payment Method
+                Add {user?.role === 'Student' || user?.role === 'Parent' ? 'Payment' : 'Payout'} Method
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Add Payment Method</DialogTitle>
+                <DialogTitle>
+                  Add {user?.role === 'Student' || user?.role === 'Parent' ? 'Payment' : 'Payout'} Method
+                </DialogTitle>
                 <DialogDescription>
-                  Choose a payment method and enter your details
+                  Choose a method and enter your details
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label>Payment Method Type *</Label>
+                  <Label>
+                    {user?.role === 'Student' || user?.role === 'Parent' ? 'Payment' : 'Payout'} Method Type *
+                  </Label>
                   <Select
                     value={selectedPaymentType}
                     onValueChange={(value) => setSelectedPaymentType(value as PaymentMethodType)}
@@ -386,34 +499,121 @@ export function BillingTab() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={PaymentMethodType.VODAFONE_CASH}>
-                        <div className="flex items-center gap-2">
-                          <Smartphone className="h-4 w-4" />
-                          Vodafone Cash
-                        </div>
-                      </SelectItem>
-                      <SelectItem value={PaymentMethodType.INSTAPAY}>
-                        <div className="flex items-center gap-2">
-                          <Wallet className="h-4 w-4" />
-                          Instapay
-                        </div>
-                      </SelectItem>
-                      <SelectItem value={PaymentMethodType.FAWRY}>
-                        <div className="flex items-center gap-2">
-                          <CreditCard className="h-4 w-4" />
-                          Fawry
-                        </div>
-                      </SelectItem>
-                      <SelectItem value={PaymentMethodType.BANK_ACCOUNT}>
-                        <div className="flex items-center gap-2">
-                          <Building className="h-4 w-4" />
-                          Bank Account
-                        </div>
-                      </SelectItem>
+                      {allowedPaymentMethods.includes(PaymentMethodType.CARD) && (
+                        <SelectItem value={PaymentMethodType.CARD}>
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="h-4 w-4" />
+                            Credit/Debit Card
+                          </div>
+                        </SelectItem>
+                      )}
+                      {allowedPaymentMethods.includes(PaymentMethodType.VODAFONE_CASH) && (
+                        <SelectItem value={PaymentMethodType.VODAFONE_CASH}>
+                          <div className="flex items-center gap-2">
+                            <Smartphone className="h-4 w-4" />
+                            Vodafone Cash
+                          </div>
+                        </SelectItem>
+                      )}
+                      {allowedPaymentMethods.includes(PaymentMethodType.INSTAPAY) && (
+                        <SelectItem value={PaymentMethodType.INSTAPAY}>
+                          <div className="flex items-center gap-2">
+                            <Wallet className="h-4 w-4" />
+                            Instapay
+                          </div>
+                        </SelectItem>
+                      )}
+                      {allowedPaymentMethods.includes(PaymentMethodType.FAWRY) && (
+                        <SelectItem value={PaymentMethodType.FAWRY}>
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="h-4 w-4" />
+                            Fawry
+                          </div>
+                        </SelectItem>
+                      )}
+                      {allowedPaymentMethods.includes(PaymentMethodType.BANK_ACCOUNT) && (
+                        <SelectItem value={PaymentMethodType.BANK_ACCOUNT}>
+                          <div className="flex items-center gap-2">
+                            <Building className="h-4 w-4" />
+                            Bank Account
+                          </div>
+                        </SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
 
+                {/* Card form */}
+                {selectedPaymentType === PaymentMethodType.CARD && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="cardholderName">Cardholder Name *</Label>
+                      <Input
+                        id="cardholderName"
+                        placeholder="John Doe"
+                        value={newPaymentData.cardholderName}
+                        onChange={(e) =>
+                          setNewPaymentData({ ...newPaymentData, cardholderName: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cardNumber">Card Number *</Label>
+                      <Input
+                        id="cardNumber"
+                        placeholder="1234 5678 9012 3456"
+                        maxLength={19}
+                        value={newPaymentData.cardNumber}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\s/g, '');
+                          const formatted = value.match(/.{1,4}/g)?.join(' ') || value;
+                          setNewPaymentData({ ...newPaymentData, cardNumber: formatted });
+                        }}
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="expiryMonth">Month *</Label>
+                        <Input
+                          id="expiryMonth"
+                          placeholder="MM"
+                          maxLength={2}
+                          value={newPaymentData.expiryMonth}
+                          onChange={(e) =>
+                            setNewPaymentData({ ...newPaymentData, expiryMonth: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="expiryYear">Year *</Label>
+                        <Input
+                          id="expiryYear"
+                          placeholder="YYYY"
+                          maxLength={4}
+                          value={newPaymentData.expiryYear}
+                          onChange={(e) =>
+                            setNewPaymentData({ ...newPaymentData, expiryYear: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="cvv">CVV *</Label>
+                        <Input
+                          id="cvv"
+                          type="password"
+                          placeholder="123"
+                          maxLength={4}
+                          value={newPaymentData.cvv}
+                          onChange={(e) =>
+                            setNewPaymentData({ ...newPaymentData, cvv: e.target.value })
+                          }
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Vodafone Cash form */}
                 {selectedPaymentType === PaymentMethodType.VODAFONE_CASH && (
                   <div className="space-y-2">
                     <Label htmlFor="vodafoneNumber">Vodafone Cash Number *</Label>
@@ -428,6 +628,7 @@ export function BillingTab() {
                   </div>
                 )}
 
+                {/* Instapay form */}
                 {selectedPaymentType === PaymentMethodType.INSTAPAY && (
                   <div className="space-y-2">
                     <Label htmlFor="instapayId">Instapay ID *</Label>
@@ -445,6 +646,7 @@ export function BillingTab() {
                   </div>
                 )}
 
+                {/* Fawry form */}
                 {selectedPaymentType === PaymentMethodType.FAWRY && (
                   <div className="space-y-2">
                     <Label htmlFor="fawryNumber">Fawry Reference Number *</Label>
@@ -459,6 +661,7 @@ export function BillingTab() {
                   </div>
                 )}
 
+                {/* Bank Account form */}
                 {selectedPaymentType === PaymentMethodType.BANK_ACCOUNT && (
                   <>
                     <div className="space-y-2">
@@ -509,7 +712,7 @@ export function BillingTab() {
                 )}
 
                 <p className="text-xs text-muted-foreground">
-                  🔒 Your payment information is encrypted and stored securely.
+                  🔒 Your {user?.role === 'Student' || user?.role === 'Parent' ? 'payment' : 'payout'} information is encrypted and stored securely.
                 </p>
               </div>
               <DialogFooter>
@@ -518,6 +721,11 @@ export function BillingTab() {
                   onClick={() => {
                     setIsAddPaymentDialogOpen(false);
                     setNewPaymentData({
+                      cardNumber: "",
+                      cardholderName: "",
+                      expiryMonth: "",
+                      expiryYear: "",
+                      cvv: "",
                       vodafoneNumber: "",
                       instapayId: "",
                       fawryNumber: "",
@@ -533,7 +741,7 @@ export function BillingTab() {
                 </Button>
                 <Button onClick={handleAddPaymentMethod} disabled={isAddingPayment}>
                   {isAddingPayment && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Add Payment Method
+                  Add {user?.role === 'Student' || user?.role === 'Parent' ? 'Payment' : 'Payout'} Method
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -544,9 +752,11 @@ export function BillingTab() {
       <AlertDialog open={!!paymentToRemove} onOpenChange={() => setPaymentToRemove(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove Payment Method?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Remove {user?.role === 'Student' || user?.role === 'Parent' ? 'Payment' : 'Payout'} Method?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove this payment method? 
+              Are you sure you want to remove this {user?.role === 'Student' || user?.role === 'Parent' ? 'payment' : 'payout'} method? 
               This action cannot be undone and you'll need to add it again if needed.
             </AlertDialogDescription>
           </AlertDialogHeader>

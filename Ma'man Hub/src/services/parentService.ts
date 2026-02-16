@@ -99,13 +99,4 @@ async updateChildNotificationPreferences(
 }
 ,
 
-// async getParentEnrolledCourses(): Promise<Course[]> {
-//   const response = await api.get('/parent/courses/enrolled');
-//   return response.data;
-// },
-
-// async getParentAchievements(): Promise<Achievement[]> {
-//   const response = await api.get('/parent/achievements');
-//   return response.data;
-// }
 }

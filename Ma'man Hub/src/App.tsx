@@ -50,6 +50,7 @@ import QuizPage from "./pages/quiz/QuizPage";
 import LiveSessionPage from "./pages/live/LiveSessionPage";
 import GoLivePage from "./pages/creator/GoLivePage";
 import AcceptInvitePage from "./pages/profile/AcceptInvitePage";
+import PublicProfilePage from "./pages/profile/PublicProfilePage";
 
 const queryClient = new QueryClient();
 
@@ -71,7 +72,7 @@ const App = () => (
 
           {/* Creator Routes */}
           <Route path="/creator" element={<CreatorDashboardPage />} />
-          <Route path="/creator/profile" element={<CreatorProfilePage />} />
+          <Route path="/content-creator/profile" element={<CreatorProfilePage />} />
           <Route path="/creator/upload" element={<UploadVideoPage />} />
           <Route path="/creator/go-live" element={<GoLivePage />} />
 
@@ -83,6 +84,8 @@ const App = () => (
           {/* Parent Routes */}
           <Route path="/parent/profile" element={<ParentProfilePage />} />
 
+          <Route path="/profile/:userId" element={<PublicProfilePage />} />
+          
           {/* Specialist Routes */}
           <Route
             path="/specialist/profile"
