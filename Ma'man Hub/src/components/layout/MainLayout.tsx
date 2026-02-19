@@ -51,7 +51,7 @@
 //               <GraduationCap className="h-7 w-7 text-white" />
 //             </div>
 //             <span className="hidden font-display text-2xl font-extrabold tracking-wide text-transparent bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text sm:inline-block">
-//               EduPlatform
+//               Ma'man
 //             </span>
 //           </Link>
 
@@ -288,7 +288,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             </div>{" "}
             <span className="hidden font-display text-2xl font-extrabold tracking-wide text-transparent bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text sm:inline-block">
               {" "}
-              EduPlatform{" "}
+              Ma'man{" "}
             </span>{" "}
           </Link>{" "}
           {/* Desktop Navigation */}{" "}
@@ -476,7 +476,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                   <GraduationCap className="h-4 w-4 text-primary-foreground" />
                 </div>
                 <span className="font-display text-lg font-bold">
-                  EduPlatform
+                  Ma'man
                 </span>
               </Link>
               <p className="text-sm text-muted-foreground">
@@ -548,7 +548,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             </div>
           </div>
           <div className="mt-8 border-t border-border pt-8 text-center text-sm text-muted-foreground">
-            © {new Date().getFullYear()} EduPlatform. All rights reserved.
+            © {new Date().getFullYear()} Ma'man. All rights reserved.
           </div>
         </div>
       </footer>

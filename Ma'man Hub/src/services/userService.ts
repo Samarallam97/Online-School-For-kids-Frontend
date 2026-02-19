@@ -1,7 +1,5 @@
 
 import api from './api';
-import { WorkExperience } from './creatorService';
-
 
 export interface SocialLink {
     id: string;
@@ -10,16 +8,31 @@ export interface SocialLink {
 }
 
 export interface NotificationPreferences {
-    progressUpdates: boolean;
-    weeklyReports: boolean;
-    achievementAlerts: boolean;
-    paymentReminders: boolean;
+    
+    // all except admin
+    weeklyReports?: boolean;
+    messages?: boolean;
+    commentReplies?: boolean;
 
-    // Creator-specific
+    // student , parent
+    progressUpdates?: boolean;
+    achievementAlerts?: boolean;
+    paymentReminders?: boolean;
+
+    // Creator
     courseEnrollments?: boolean;
-    studentMessages?: boolean;
+
+    // Specialist
+    newSessionBooking?: boolean;
+    sessionCancellation?: boolean;
+    sessionReminder?: boolean;
+
+    // creator , specialist
     reviewNotifications?: boolean;
     payoutAlerts?: boolean;
+
+
+    // [key: string]: boolean | undefined;
 }
 
 export interface PaymentMethod {
@@ -81,6 +94,36 @@ export interface ProfileDto {
 export interface UploadProfilePictureDto {
     profilePictureUrl: string;
     message: string;
+}
+
+export interface WorkExperience {
+    id: string;
+    title: string;
+    place: string;
+    startDate: string;
+    endDate: string | null;
+    isCurrentRole: boolean;
+}
+
+export interface PayoutDto {
+    id: string;
+    amount: number;
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    payoutSettingId: string;
+    scheduledDate: string;
+    processedDate?: string;
+    currency: string;
+    month: string;
+    year: number;
+}
+
+export interface Certification {
+  id: string;
+  name: string;
+  issuer: string;
+  year: string;
+  fileUrl?: string;
+  fileName?: string;
 }
 
 export interface PublicProfileDto {
@@ -179,6 +222,9 @@ export const userService = {
                 'Content-Type': 'multipart/form-data',
             },
         });
+        let user = JSON.parse(localStorage.getItem("user"))
+        user.profilePictureUrl = response.data.profilePictureUrl
+        localStorage.setItem("user" , JSON.stringify(user))
         return response.data;
     },
 
@@ -186,7 +232,7 @@ export const userService = {
         await api.delete('/User/profile-picture');
     },
     getSocialLinks: async (): Promise<SocialLink[]> => {
-        const response = await api.get('/ContentCreator/social-links');
+        const response = await api.get('/User/social-links');
         return response.data;
     },
 
@@ -194,7 +240,7 @@ export const userService = {
         name: string;
         value: string;
     }): Promise<SocialLink> => {
-        const response = await api.post('/ContentCreator/social-links', linkData);
+        const response = await api.post('/User/social-links', linkData);
         return response.data;
     },
 
@@ -202,13 +248,79 @@ export const userService = {
         name: string;
         value: string;
     }): Promise<SocialLink> => {
-        const response = await api.put(`/ContentCreator/social-links/${linkId}`, linkData);
+        const response = await api.put(`/User/social-links/${linkId}`, linkData);
         return response.data;
     },
 
     deleteSocialLink: async (linkId: string): Promise<void> => {
-        await api.delete(`/ContentCreator/social-links/${linkId}`);
+        await api.delete(`/User/social-links/${linkId}`);
     },
+
+        // Get payout history
+    getPayouts: async (params?: {
+        status?: 'pending' | 'processing' | 'completed' | 'failed';
+        limit?: number;
+        offset?: number;
+    }): Promise<{
+        payouts: PayoutDto[];
+        total: number;
+        nextPayout?: PayoutDto;
+    }> => {
+        const response = await api.get('/User/payouts', { params });
+        return response.data;
+    },
+    getExperiences: async (): Promise<WorkExperience[]> => {
+        const response = await api.get('/User/experiences');
+        return response.data;
+    },
+
+    addExperience: async (experienceData: Omit<WorkExperience, 'id'>): Promise<WorkExperience> => {
+        const response = await api.post('/User/experiences', experienceData);
+        return response.data;
+    },
+
+    updateExperience: async (experienceId: string, experienceData: Partial<WorkExperience>): Promise<WorkExperience> => {
+        const response = await api.put(`/User/experiences/${experienceId}`, experienceData);
+        return response.data;
+    },
+
+    deleteExperience: async (experienceId: string): Promise<void> => {
+        await api.delete(`/User/experiences/${experienceId}`);
+    },
+
+  getCertifications: async (): Promise<Certification[]> => {
+    const response = await api.get('/User/certifications');
+    return response.data;
+  },
+
+  addCertification: async (data: {
+    name: string;
+    issuer: string;
+    year: string;
+    file?: File;
+  }): Promise<Certification> => {
+    const formData = new FormData();
+    formData.append('name', data.name);
+    formData.append('issuer', data.issuer);
+    formData.append('year', data.year);
+    if (data.file) formData.append('file', data.file);
+    const response = await api.post('/User/certifications', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  deleteCertification: async (certificationId: string): Promise<void> => {
+    await api.delete(`/User/certifications/${certificationId}`);
+  },
+
+  downloadCertification: async (certificationId: string): Promise<Blob> => {
+    const response = await api.get(
+      `/User/certifications/${certificationId}/download`,
+      { responseType: 'blob' }
+    );
+    return response.data;
+  },
 
     getPublicProfile: async (userId: string): Promise<PublicProfileDto> => {
         const response = await api.get(`/User/${userId}/public-profile`);

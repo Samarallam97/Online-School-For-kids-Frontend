@@ -25,9 +25,10 @@ import { ShareProfileDialog } from "@/components/profile/ShareProfileDialog";
 import { PersonalInfoTab } from "@/components/profile/student/StudentPersonalInfoTab";
 import { CoursesTab } from "@/components/profile/parent/CoursesTab";
 import { AchievementsTab } from "@/components/profile/parent/AchievementsTab";
-import { NotificationsTab } from "@/components/profile/student/StudentNotificationTab";
+import { NotificationsTab } from "@/components/profile/NotificationsTab";
 import { BillingTab } from "@/components/profile/parent/BillingTab";
 import { ParentLinkCard } from "@/components/profile/student/ParentLinkCard";
+import { SocialLinksTab } from "@/components/profile/creator/SocialLinksTab";
 
 export default function StudentProfilePage() {
   const { toast } = useToast();
@@ -38,7 +39,6 @@ export default function StudentProfilePage() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Check if redirected from accept invite
   const showParentLinked = location.state?.showParentLinked || false;
   const parentName = location.state?.parentName;
 
@@ -58,77 +58,39 @@ export default function StudentProfilePage() {
         setIsLoading(false);
       }
     };
-
     fetchProfile();
   }, [toast]);
-
-  const handleProfilePictureClick = () => {
-    fileInputRef.current?.click();
-  };
 
   const handleProfilePictureChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Invalid File",
-        description: "Please select an image file",
-        variant: "destructive",
-      });
+      toast({ title: "Invalid File", description: "Please select an image file", variant: "destructive" });
       return;
     }
-
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "File Too Large",
-        description: "Please select an image smaller than 5MB",
-        variant: "destructive",
-      });
+      toast({ title: "File Too Large", description: "Please select an image smaller than 5MB", variant: "destructive" });
       return;
     }
-
     try {
       setIsUploadingImage(true);
-      
       const formData = new FormData();
       formData.append('profilePicture', file);
-
       const response = await userService.uploadProfilePicture(formData);
-      
-      // Update local state with new profile picture URL
-      setUserData(prev => prev ? {
-        ...prev,
-        profilePictureUrl: response.profilePictureUrl
-      } : null);
-
-      toast({
-        title: "Success",
-        description: "Profile picture updated successfully",
-      });
+      setUserData(prev => prev ? { ...prev, profilePictureUrl: response.profilePictureUrl } : null);
+      toast({ title: "Success", description: "Profile picture updated successfully" });
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.response?.data?.message || "Failed to upload profile picture",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.response?.data?.message || "Failed to upload profile picture", variant: "destructive" });
     } finally {
       setIsUploadingImage(false);
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
   const getInitials = (): string => {
     if (!userData?.fullName) return "U";
     const parts = userData.fullName.trim().split(" ");
-    if (parts.length >= 2) {
-      return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`;
-    }
+    if (parts.length >= 2) return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`;
     return userData.fullName.charAt(0);
   };
 
@@ -162,107 +124,65 @@ export default function StudentProfilePage() {
               <div className="relative">
                 <Avatar className="h-24 w-24">
                   <AvatarImage src={userData.profilePictureUrl} alt={userData.fullName} />
-                  <AvatarFallback className="text-2xl">
-                    {getInitials()}
-                  </AvatarFallback>
+                  <AvatarFallback className="text-2xl">{getInitials()}</AvatarFallback>
                 </Avatar>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleProfilePictureChange}
-                />
-                <Button
-                  size="icon"
-                  variant="secondary"
-                  className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full"
-                  onClick={handleProfilePictureClick}
-                  disabled={isUploadingImage}
-                >
-                  {isUploadingImage ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Camera className="h-4 w-4" />
-                  )}
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleProfilePictureChange} />
+                <Button size="icon" variant="secondary" className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full" onClick={() => fileInputRef.current?.click()} disabled={isUploadingImage}>
+                  {isUploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
                 </Button>
               </div>
               <div className="flex-1 text-center sm:text-left">
                 <h1 className="text-2xl font-bold">{userData.fullName}</h1>
                 <p className="text-muted-foreground capitalize">{userData.role || "Student"}</p>
                 <div className="mt-2 flex flex-wrap justify-center gap-2 sm:justify-start">
-                  <Badge variant="secondary">
-                    <BookOpen className="mr-1 h-3 w-3" />
-                    {userData.enrolledCourses || 0} Courses
-                  </Badge>
-                  <Badge variant="secondary">
-                    <Trophy className="mr-1 h-3 w-3" />
-                    {userData.achievements || 0} Achievements
-                  </Badge>
-                  <Badge variant="secondary">
-                    <Clock className="mr-1 h-3 w-3" />
-                    {userData.totalHoursLearned || 0} Hours Learned
-                  </Badge>
+                  <Badge variant="secondary"><BookOpen className="mr-1 h-3 w-3" />{userData.enrolledCourses || 0} Courses</Badge>
+                  <Badge variant="secondary"><Trophy className="mr-1 h-3 w-3" />{userData.achievements || 0} Achievements</Badge>
+                  <Badge variant="secondary"><Clock className="mr-1 h-3 w-3" />{userData.totalHoursLearned || 0} Hours Learned</Badge>
                 </div>
               </div>
               <div className="flex gap-2">
-                <Link to="/messages">
-                  <Button variant="outline" size="icon">
-                    <MessageSquare className="h-4 w-4" />
-                  </Button>
-                </Link>
-                <ShareProfileDialog
-                  userId={userData.id}
-                  userName={userData.fullName}
-                />
+                <Link to="/messages"><Button variant="outline" size="icon"><MessageSquare className="h-4 w-4" /></Button></Link>
+                <ShareProfileDialog userId={userData.id} userName={userData.fullName} />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Tabs value={currentTab} onValueChange={setCurrentTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="parent">Parent</TabsTrigger>
             <TabsTrigger value="courses">My Courses</TabsTrigger>
             <TabsTrigger value="achievements">Achievements</TabsTrigger>
+            <TabsTrigger value="social">Social Links</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="billing">Billing</TabsTrigger>
           </TabsList>
 
-          {/* Profile Tab */}
           <TabsContent value="profile">
-            <PersonalInfoTab 
-              userData={userData} 
-              setUserData={setUserData}
-              isActive={currentTab === "profile"}
-            />
+            <PersonalInfoTab userData={userData} setUserData={setUserData} isActive={currentTab === "profile"} />
           </TabsContent>
 
-          {/* Parent Tab */}
           <TabsContent value="parent">
-            <ParentLinkCard 
-              showSuccessMessage={showParentLinked}
-              parentNameFromInvite={parentName}
-            />
+            <ParentLinkCard showSuccessMessage={showParentLinked} parentNameFromInvite={parentName} />
           </TabsContent>
 
-          {/* Courses Tab */}
           <TabsContent value="courses">
             <CoursesTab />
           </TabsContent>
 
-          {/* Achievements Tab */}
           <TabsContent value="achievements">
             <AchievementsTab />
           </TabsContent>
 
-          {/* Notifications Tab */}
-          <TabsContent value="notifications">
-            <NotificationsTab />
+          <TabsContent value="social">
+            <SocialLinksTab />
           </TabsContent>
 
-          {/* Billing Tab */}
+          <TabsContent value="notifications">
+            <NotificationsTab role="student" />
+          </TabsContent>
+
           <TabsContent value="billing">
             <BillingTab />
           </TabsContent>
