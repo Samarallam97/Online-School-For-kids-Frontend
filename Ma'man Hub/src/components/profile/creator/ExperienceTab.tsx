@@ -31,9 +31,93 @@ import {
 import { Briefcase, Plus, Trash2, Edit, Loader2, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
-import { creatorService, WorkExperience } from "@/services/creatorService";
+import { userService , WorkExperience} from "@/services/userService";
 
 type Experience = WorkExperience;
+
+interface FormData {
+  title: string;
+  place: string;
+  startDate: string;
+  endDate: string;
+  isCurrentRole: boolean;
+}
+
+// ✅ Defined OUTSIDE ExperienceTab so it never remounts on parent re-render
+interface ExperienceFormFieldsProps {
+  formData: FormData;
+  onChange: (data: FormData) => void;
+  idPrefix: string;
+}
+
+function ExperienceFormFields({ formData, onChange, idPrefix }: ExperienceFormFieldsProps) {
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor={`${idPrefix}-title`}>
+          Job Title <span className="text-red-500">*</span>
+        </Label>
+        <Input
+          id={`${idPrefix}-title`}
+          value={formData.title}
+          onChange={(e) => onChange({ ...formData, title: e.target.value })}
+          placeholder="e.g., Senior Developer"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor={`${idPrefix}-place`}>
+          Company/Place <span className="text-red-500">*</span>
+        </Label>
+        <Input
+          id={`${idPrefix}-place`}
+          value={formData.place}
+          onChange={(e) => onChange({ ...formData, place: e.target.value })}
+          placeholder="e.g., Tech Corp"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor={`${idPrefix}-startDate`}>
+          Start Date <span className="text-red-500">*</span>
+        </Label>
+        <Input
+          id={`${idPrefix}-startDate`}
+          type="month"
+          value={formData.startDate}
+          onChange={(e) => onChange({ ...formData, startDate: e.target.value })}
+        />
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id={`${idPrefix}-isCurrentRole`}
+          checked={formData.isCurrentRole}
+          onCheckedChange={(checked) =>
+            onChange({ ...formData, isCurrentRole: checked as boolean })
+          }
+        />
+        <Label htmlFor={`${idPrefix}-isCurrentRole`} className="cursor-pointer">
+          I currently work here
+        </Label>
+      </div>
+
+      {!formData.isCurrentRole && (
+        <div className="space-y-2">
+          <Label htmlFor={`${idPrefix}-endDate`}>
+            End Date <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id={`${idPrefix}-endDate`}
+            type="month"
+            value={formData.endDate}
+            onChange={(e) => onChange({ ...formData, endDate: e.target.value })}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function ExperienceTab() {
   const { toast } = useToast();
@@ -46,7 +130,7 @@ export function ExperienceTab() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     title: "",
     place: "",
     startDate: "",
@@ -61,7 +145,7 @@ export function ExperienceTab() {
   const fetchExperiences = async () => {
     try {
       setIsLoading(true);
-      const data = await creatorService.getExperiences();
+      const data = await userService.getExperiences();
       setExperiences(data);
     } catch (error: any) {
       toast({
@@ -105,7 +189,7 @@ export function ExperienceTab() {
 
     try {
       setIsSaving(true);
-      const newExperience = await creatorService.addExperience({
+      const newExperience = await userService.addExperience({
         title: formData.title,
         place: formData.place,
         startDate: formData.startDate,
@@ -167,7 +251,7 @@ export function ExperienceTab() {
 
     try {
       setIsSaving(true);
-      const updated = await creatorService.updateExperience(selectedExperience.id, {
+      const updated = await userService.updateExperience(selectedExperience.id, {
         title: formData.title,
         place: formData.place,
         startDate: formData.startDate,
@@ -202,7 +286,7 @@ export function ExperienceTab() {
 
     try {
       setIsDeleting(true);
-      await creatorService.deleteExperience(selectedExperience.id);
+      await userService.deleteExperience(selectedExperience.id);
       setExperiences(experiences.filter((exp) => exp.id !== selectedExperience.id));
       setShowDeleteDialog(false);
       setSelectedExperience(null);
@@ -265,71 +349,12 @@ export function ExperienceTab() {
                   Add your professional work experience
                 </DialogDescription>
               </DialogHeader>
-              {/* Inline form to prevent re-render issues */}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="add-title">
-                    Job Title <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="add-title"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="e.g., Senior Developer"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="add-place">
-                    Company/Place <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="add-place"
-                    value={formData.place}
-                    onChange={(e) => setFormData({ ...formData, place: e.target.value })}
-                    placeholder="e.g., Tech Corp"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="add-startDate">
-                    Start Date <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="add-startDate"
-                    type="month"
-                    value={formData.startDate}
-                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                  />
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="add-isCurrentRole"
-                    checked={formData.isCurrentRole}
-                    onCheckedChange={(checked) =>
-                      setFormData({ ...formData, isCurrentRole: checked as boolean })
-                    }
-                  />
-                  <Label htmlFor="add-isCurrentRole" className="cursor-pointer">
-                    I currently work here
-                  </Label>
-                </div>
-
-                {!formData.isCurrentRole && (
-                  <div className="space-y-2">
-                    <Label htmlFor="add-endDate">
-                      End Date <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="add-endDate"
-                      type="month"
-                      value={formData.endDate}
-                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                    />
-                  </div>
-                )}
-              </div>
+              {/* ✅ Stable component reference — won't remount on formData change */}
+              <ExperienceFormFields
+                formData={formData}
+                onChange={setFormData}
+                idPrefix="add"
+              />
               <DialogFooter>
                 <Button
                   variant="outline"
@@ -411,71 +436,12 @@ export function ExperienceTab() {
             <DialogTitle>Edit Work Experience</DialogTitle>
             <DialogDescription>Update your work experience details</DialogDescription>
           </DialogHeader>
-          {/* Inline form to prevent re-render issues */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-title">
-                Job Title <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="edit-title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="e.g., Senior Developer"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-place">
-                Company/Place <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="edit-place"
-                value={formData.place}
-                onChange={(e) => setFormData({ ...formData, place: e.target.value })}
-                placeholder="e.g., Tech Corp"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-startDate">
-                Start Date <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="edit-startDate"
-                type="month"
-                value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-              />
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="edit-isCurrentRole"
-                checked={formData.isCurrentRole}
-                onCheckedChange={(checked) =>
-                  setFormData({ ...formData, isCurrentRole: checked as boolean })
-                }
-              />
-              <Label htmlFor="edit-isCurrentRole" className="cursor-pointer">
-                I currently work here
-              </Label>
-            </div>
-
-            {!formData.isCurrentRole && (
-              <div className="space-y-2">
-                <Label htmlFor="edit-endDate">
-                  End Date <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="edit-endDate"
-                  type="month"
-                  value={formData.endDate}
-                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                />
-              </div>
-            )}
-          </div>
+          {/* ✅ Stable component reference — won't remount on formData change */}
+          <ExperienceFormFields
+            formData={formData}
+            onChange={setFormData}
+            idPrefix="edit"
+          />
           <DialogFooter>
             <Button
               variant="outline"

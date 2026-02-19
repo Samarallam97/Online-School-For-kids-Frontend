@@ -66,8 +66,7 @@ enum PaymentMethodType {
   BANK_ACCOUNT = "bank_account",
 }
 
-// Define which payment methods are available for each role
-const ROLE_PAYMENT_METHODS = {
+const ROLE_PAYMENT_METHODS: Record<string, PaymentMethodType[]> = {
   Student: [
     PaymentMethodType.CARD,
     PaymentMethodType.VODAFONE_CASH,
@@ -80,7 +79,7 @@ const ROLE_PAYMENT_METHODS = {
     PaymentMethodType.INSTAPAY,
     PaymentMethodType.FAWRY,
   ],
-  Specialsit: [
+  Specialist: [
     PaymentMethodType.BANK_ACCOUNT,
     PaymentMethodType.VODAFONE_CASH,
     PaymentMethodType.INSTAPAY,
@@ -94,30 +93,44 @@ const ROLE_PAYMENT_METHODS = {
   ],
 };
 
+// ── Safe localStorage helper ──────────────────────────────────────────────────
+function getCurrentUser(): { role?: string } {
+  try {
+    const raw = localStorage.getItem("user");
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    console.log(parsed);
+    
+    // Handle both { user: { role } } and { role } shapes
+    return parsed?.user ?? parsed ?? {};
+  } catch {
+    return {};
+  }
+}
+
+const PAYER_ROLES = ["Student", "Parent"];
+const isPayer = (role?: string) => PAYER_ROLES.includes(role ?? "");
+
 export function BillingTab() {
   const { toast } = useToast();
-  const { user } = JSON.parse(localStorage.getItem("user")); 
+
+  // Derive user once — safe regardless of localStorage shape
+  const currentUser = getCurrentUser();
+  const userRole = currentUser?.role;
+  const isPayerRole = isPayer(userRole);
+
+  const allowedPaymentMethods = ROLE_PAYMENT_METHODS[userRole ?? ""] ?? [];
+
+  const getInitialPaymentType = (): PaymentMethodType => {
+    if (allowedPaymentMethods.length === 0) return PaymentMethodType.CARD;
+    return isPayerRole ? PaymentMethodType.CARD : PaymentMethodType.BANK_ACCOUNT;
+  };
+
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [isLoadingPayments, setIsLoadingPayments] = useState(true);
   const [isAddPaymentDialogOpen, setIsAddPaymentDialogOpen] = useState(false);
   const [isAddingPayment, setIsAddingPayment] = useState(false);
-  
-  // Get allowed payment methods for current user role
-  const allowedPaymentMethods = ROLE_PAYMENT_METHODS[user?.role as keyof typeof ROLE_PAYMENT_METHODS] || [];
-  
-  // Set initial payment type based on role
-  const getInitialPaymentType = () => {
-    if (allowedPaymentMethods.length === 0) return PaymentMethodType.CARD;
-    if (user?.role === 'Student' || user?.role === 'Parent') {
-      return PaymentMethodType.CARD;
-    }
-    return PaymentMethodType.BANK_ACCOUNT;
-  };
-  
-  const [selectedPaymentType, setSelectedPaymentType] = useState<PaymentMethodType>(
-    getInitialPaymentType()
-  );
-  
+  const [selectedPaymentType, setSelectedPaymentType] = useState<PaymentMethodType>(getInitialPaymentType);
   const [newPaymentData, setNewPaymentData] = useState({
     cardNumber: "",
     cardholderName: "",
@@ -132,7 +145,6 @@ export function BillingTab() {
     accountNumber: "",
     iban: "",
   });
-  
   const [paymentToRemove, setPaymentToRemove] = useState<PaymentMethod | null>(null);
   const [isRemovingPayment, setIsRemovingPayment] = useState(false);
   const [isSettingDefault, setIsSettingDefault] = useState<string | null>(null);
@@ -143,8 +155,7 @@ export function BillingTab() {
         setIsLoadingPayments(true);
         const methods = await userService.getPaymentMethods();
         setPaymentMethods(methods);
-      } catch (error: any) {
-        console.error("Failed to load payment methods:", error);
+      } catch {
         setPaymentMethods([]);
       } finally {
         setIsLoadingPayments(false);
@@ -153,141 +164,94 @@ export function BillingTab() {
     fetchPaymentMethods();
   }, []);
 
-  // Helper to get appropriate card title/description based on role
-  const getCardContent = () => {
-    if (user?.role === 'Student' || user?.role === 'Parent') {
-      return {
-        title: "Payment Methods",
-        description: "Manage your payment methods for course purchases",
-        emptyMessage: "Add a payment method to purchase courses and subscriptions.",
-      };
-    }
-    return {
-      title: "Payout Methods",
-      description: "Manage how you receive your earnings",
-      emptyMessage: "Add a payout method to receive your earnings from courses.",
-    };
+  // Reset selected type when dialog opens to always show a valid default
+  const handleOpenDialog = (open: boolean) => {
+    if (open) setSelectedPaymentType(getInitialPaymentType());
+    setIsAddPaymentDialogOpen(open);
   };
 
-  const content = getCardContent();
+  const labels = {
+    methodWord: isPayerRole ? "Payment" : "Payout",
+    title: isPayerRole ? "Payment Methods" : "Payout Methods",
+    description: isPayerRole
+      ? "Manage your payment methods for course purchases"
+      : "Manage how you receive your earnings",
+    emptyMessage: isPayerRole
+      ? "Add a payment method to purchase courses and subscriptions."
+      : "Add a payout method to receive your earnings from courses.",
+  };
+
+  const resetForm = () =>
+    setNewPaymentData({
+      cardNumber: "", cardholderName: "", expiryMonth: "", expiryYear: "", cvv: "",
+      vodafoneNumber: "", instapayId: "", fawryNumber: "",
+      accountHolderName: "", bankName: "", accountNumber: "", iban: "",
+    });
 
   const handleAddPaymentMethod = async () => {
     let paymentMethodData: any = { type: selectedPaymentType };
 
-    // Check if payment method is allowed for this role
-    if (!allowedPaymentMethods.includes(selectedPaymentType)) {
-      toast({
-        title: "Not Allowed",
-        description: `${getPaymentMethodLabel(selectedPaymentType)} is not available for ${user?.role}s`,
-        variant: "destructive",
-      });
-      return;
-    }
-
     switch (selectedPaymentType) {
       case PaymentMethodType.CARD:
-        if (!newPaymentData.cardNumber || !newPaymentData.cardholderName || 
-            !newPaymentData.expiryMonth || !newPaymentData.expiryYear || !newPaymentData.cvv) {
-          toast({
-            title: "Validation Error",
-            description: "Please fill in all card details",
-            variant: "destructive",
-          });
+        if (!newPaymentData.cardNumber || !newPaymentData.cardholderName ||
+          !newPaymentData.expiryMonth || !newPaymentData.expiryYear || !newPaymentData.cvv) {
+          toast({ title: "Validation Error", description: "Please fill in all card details", variant: "destructive" });
           return;
         }
-        paymentMethodData.cardNumber = newPaymentData.cardNumber.replace(/\s/g, '');
-        paymentMethodData.cardholderName = newPaymentData.cardholderName;
-        paymentMethodData.expiryMonth = parseInt(newPaymentData.expiryMonth);
-        paymentMethodData.expiryYear = parseInt(newPaymentData.expiryYear);
-        paymentMethodData.cvv = newPaymentData.cvv;
+        paymentMethodData = {
+          ...paymentMethodData,
+          cardNumber: newPaymentData.cardNumber.replace(/\s/g, ""),
+          cardholderName: newPaymentData.cardholderName,
+          expiryMonth: parseInt(newPaymentData.expiryMonth),
+          expiryYear: parseInt(newPaymentData.expiryYear),
+          cvv: newPaymentData.cvv,
+        };
         break;
-
       case PaymentMethodType.VODAFONE_CASH:
         if (!newPaymentData.vodafoneNumber) {
-          toast({
-            title: "Validation Error",
-            description: "Please enter your Vodafone Cash number",
-            variant: "destructive",
-          });
+          toast({ title: "Validation Error", description: "Please enter your Vodafone Cash number", variant: "destructive" });
           return;
         }
         paymentMethodData.phoneNumber = newPaymentData.vodafoneNumber;
         break;
-
       case PaymentMethodType.INSTAPAY:
         if (!newPaymentData.instapayId) {
-          toast({
-            title: "Validation Error",
-            description: "Please enter your Instapay ID",
-            variant: "destructive",
-          });
+          toast({ title: "Validation Error", description: "Please enter your Instapay ID", variant: "destructive" });
           return;
         }
         paymentMethodData.instapayId = newPaymentData.instapayId;
         break;
-
       case PaymentMethodType.FAWRY:
         if (!newPaymentData.fawryNumber) {
-          toast({
-            title: "Validation Error",
-            description: "Please enter your Fawry reference number",
-            variant: "destructive",
-          });
+          toast({ title: "Validation Error", description: "Please enter your Fawry reference number", variant: "destructive" });
           return;
         }
         paymentMethodData.referenceNumber = newPaymentData.fawryNumber;
         break;
-
       case PaymentMethodType.BANK_ACCOUNT:
-        if (!newPaymentData.accountHolderName || !newPaymentData.bankName ||
-          !newPaymentData.accountNumber) {
-          toast({
-            title: "Validation Error",
-            description: "Please fill in all required bank account details",
-            variant: "destructive",
-          });
+        if (!newPaymentData.accountHolderName || !newPaymentData.bankName || !newPaymentData.accountNumber) {
+          toast({ title: "Validation Error", description: "Please fill in all required bank account details", variant: "destructive" });
           return;
         }
-        paymentMethodData.accountHolderName = newPaymentData.accountHolderName;
-        paymentMethodData.bankName = newPaymentData.bankName;
-        paymentMethodData.accountNumber = newPaymentData.accountNumber;
-        paymentMethodData.iban = newPaymentData.iban;
+        paymentMethodData = {
+          ...paymentMethodData,
+          accountHolderName: newPaymentData.accountHolderName,
+          bankName: newPaymentData.bankName,
+          accountNumber: newPaymentData.accountNumber,
+          iban: newPaymentData.iban,
+        };
         break;
     }
 
     try {
       setIsAddingPayment(true);
-      const newPaymentMethod = await userService.addPaymentMethod(paymentMethodData);
-      setPaymentMethods([...paymentMethods, newPaymentMethod]);
-      setNewPaymentData({
-        cardNumber: "",
-        cardholderName: "",
-        expiryMonth: "",
-        expiryYear: "",
-        cvv: "",
-        vodafoneNumber: "",
-        instapayId: "",
-        fawryNumber: "",
-        accountHolderName: "",
-        bankName: "",
-        accountNumber: "",
-        iban: "",
-      });
+      const newMethod = await userService.addPaymentMethod(paymentMethodData);
+      setPaymentMethods(prev => [...prev, newMethod]);
+      resetForm();
       setIsAddPaymentDialogOpen(false);
-      toast({
-        title: user?.role === 'Student' || user?.role === 'Parent' 
-          ? "Payment Method Added" 
-          : "Payout Method Added",
-        description: user?.role === 'Student' || user?.role === 'Parent'
-          ? "Your payment method has been added successfully."
-          : "Your payout method has been added successfully.",
-      });
+      toast({ title: `${labels.methodWord} Method Added`, description: `Your ${labels.methodWord.toLowerCase()} method has been added successfully.` });
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.response?.data?.message || "Failed to add payment method",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.response?.data?.message || "Failed to add payment method", variant: "destructive" });
     } finally {
       setIsAddingPayment(false);
     }
@@ -297,20 +261,10 @@ export function BillingTab() {
     try {
       setIsSettingDefault(paymentMethodId);
       await userService.setDefaultPaymentMethod(paymentMethodId);
-      setPaymentMethods(paymentMethods.map(method => ({
-        ...method,
-        isDefault: method.id === paymentMethodId
-      })));
-      toast({
-        title: "Default Payment Set",
-        description: "Your default payment method has been updated.",
-      });
+      setPaymentMethods(prev => prev.map(m => ({ ...m, isDefault: m.id === paymentMethodId })));
+      toast({ title: "Default Updated", description: "Your default payment method has been updated." });
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.response?.data?.message || "Failed to set default payment method",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.response?.data?.message || "Failed to set default", variant: "destructive" });
     } finally {
       setIsSettingDefault(null);
     }
@@ -321,18 +275,11 @@ export function BillingTab() {
     try {
       setIsRemovingPayment(true);
       await userService.removePaymentMethod(paymentToRemove.id);
-      setPaymentMethods(paymentMethods.filter(method => method.id !== paymentToRemove.id));
-      toast({
-        title: "Payment Method Removed",
-        description: "Your payment method has been removed successfully.",
-      });
+      setPaymentMethods(prev => prev.filter(m => m.id !== paymentToRemove.id));
+      toast({ title: "Removed", description: "Payment method removed successfully." });
       setPaymentToRemove(null);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.response?.data?.message || "Failed to remove payment method",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.response?.data?.message || "Failed to remove", variant: "destructive" });
     } finally {
       setIsRemovingPayment(false);
     }
@@ -340,35 +287,23 @@ export function BillingTab() {
 
   const getPaymentMethodIcon = (type: string) => {
     switch (type) {
-      case PaymentMethodType.CARD:
-        return <CreditCard className="h-5 w-5" />;
-      case PaymentMethodType.VODAFONE_CASH:
-        return <Smartphone className="h-5 w-5" />;
-      case PaymentMethodType.INSTAPAY:
-        return <Wallet className="h-5 w-5" />;
-      case PaymentMethodType.FAWRY:
-        return <CreditCard className="h-5 w-5" />;
-      case PaymentMethodType.BANK_ACCOUNT:
-        return <Building className="h-5 w-5" />;
-      default:
-        return <CreditCard className="h-5 w-5" />;
+      case PaymentMethodType.CARD: return <CreditCard className="h-5 w-5" />;
+      case PaymentMethodType.VODAFONE_CASH: return <Smartphone className="h-5 w-5" />;
+      case PaymentMethodType.INSTAPAY: return <Wallet className="h-5 w-5" />;
+      case PaymentMethodType.FAWRY: return <CreditCard className="h-5 w-5" />;
+      case PaymentMethodType.BANK_ACCOUNT: return <Building className="h-5 w-5" />;
+      default: return <CreditCard className="h-5 w-5" />;
     }
   };
 
   const getPaymentMethodLabel = (type: string) => {
     switch (type) {
-      case PaymentMethodType.CARD:
-        return "Credit/Debit Card";
-      case PaymentMethodType.VODAFONE_CASH:
-        return "Vodafone Cash";
-      case PaymentMethodType.INSTAPAY:
-        return "Instapay";
-      case PaymentMethodType.FAWRY:
-        return "Fawry";
-      case PaymentMethodType.BANK_ACCOUNT:
-        return "Bank Account";
-      default:
-        return "Payment Method";
+      case PaymentMethodType.CARD: return "Credit/Debit Card";
+      case PaymentMethodType.VODAFONE_CASH: return "Vodafone Cash";
+      case PaymentMethodType.INSTAPAY: return "Instapay";
+      case PaymentMethodType.FAWRY: return "Fawry";
+      case PaymentMethodType.BANK_ACCOUNT: return "Bank Account";
+      default: return "Payment Method";
     }
   };
 
@@ -378,9 +313,9 @@ export function BillingTab() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
-            {content.title}
+            {labels.title}
           </CardTitle>
-          <CardDescription>{content.description}</CardDescription>
+          <CardDescription>{labels.description}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {isLoadingPayments ? (
@@ -396,59 +331,35 @@ export function BillingTab() {
                       {getPaymentMethodIcon(method.type)}
                     </div>
                     <div>
-                      <p className="font-medium">
-                        {getPaymentMethodLabel(method.type)}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {method.displayInfo}
-                      </p>
+                      <p className="font-medium">{getPaymentMethodLabel(method.type)}</p>
+                      <p className="text-sm text-muted-foreground">{method.displayInfo}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     {method.isDefault ? (
                       <Badge variant="default" className="gap-1">
-                        <CheckCircle2 className="h-3 w-3" />
-                        Default
+                        <CheckCircle2 className="h-3 w-3" />Default
                       </Badge>
                     ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleSetDefaultPayment(method.id)}
-                        disabled={isSettingDefault === method.id}
-                      >
-                        {isSettingDefault === method.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          "Set as Default"
-                        )}
+                      <Button variant="outline" size="sm" onClick={() => handleSetDefaultPayment(method.id)} disabled={isSettingDefault === method.id}>
+                        {isSettingDefault === method.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Set as Default"}
                       </Button>
                     )}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
+                        <Button variant="ghost" size="sm"><MoreVertical className="h-4 w-4" /></Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         {!method.isDefault && (
                           <>
-                            <DropdownMenuItem
-                              onClick={() => handleSetDefaultPayment(method.id)}
-                              disabled={isSettingDefault === method.id}
-                            >
-                              <Check className="mr-2 h-4 w-4" />
-                              Set as Default
+                            <DropdownMenuItem onClick={() => handleSetDefaultPayment(method.id)} disabled={isSettingDefault === method.id}>
+                              <Check className="mr-2 h-4 w-4" />Set as Default
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                           </>
                         )}
-                        <DropdownMenuItem
-                          className="text-destructive focus:text-destructive"
-                          onClick={() => setPaymentToRemove(method)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Remove Method
+                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setPaymentToRemove(method)}>
+                          <Trash2 className="mr-2 h-4 w-4" />Remove Method
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -461,82 +372,54 @@ export function BillingTab() {
               <div className="rounded-full bg-muted p-4 mb-4">
                 <CreditCard className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">
-                No {user?.role === 'Student' || user?.role === 'Parent' ? 'payment' : 'payout'} methods
-              </h3>
-              <p className="text-muted-foreground mb-6 max-w-sm">
-                {content.emptyMessage}
-              </p>
+              <h3 className="text-lg font-semibold mb-2">No {labels.methodWord.toLowerCase()} methods</h3>
+              <p className="text-muted-foreground mb-6 max-w-sm">{labels.emptyMessage}</p>
             </div>
           )}
-          
-          <Dialog open={isAddPaymentDialogOpen} onOpenChange={setIsAddPaymentDialogOpen}>
+
+          <Dialog open={isAddPaymentDialogOpen} onOpenChange={handleOpenDialog}>
             <DialogTrigger asChild>
               <Button variant="outline" className="w-full">
-                <Plus className="mr-2 h-4 w-4" />
-                Add {user?.role === 'Student' || user?.role === 'Parent' ? 'Payment' : 'Payout'} Method
+                <Plus className="mr-2 h-4 w-4" />Add {labels.methodWord} Method
               </Button>
             </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>
-                  Add {user?.role === 'Student' || user?.role === 'Parent' ? 'Payment' : 'Payout'} Method
-                </DialogTitle>
-                <DialogDescription>
-                  Choose a method and enter your details
-                </DialogDescription>
+                <DialogTitle>Add {labels.methodWord} Method</DialogTitle>
+                <DialogDescription>Choose a method and enter your details</DialogDescription>
               </DialogHeader>
+
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label>
-                    {user?.role === 'Student' || user?.role === 'Parent' ? 'Payment' : 'Payout'} Method Type *
-                  </Label>
-                  <Select
-                    value={selectedPaymentType}
-                    onValueChange={(value) => setSelectedPaymentType(value as PaymentMethodType)}
-                  >
+                  <Label>{labels.methodWord} Method Type *</Label>
+                  <Select value={selectedPaymentType} onValueChange={(v) => setSelectedPaymentType(v as PaymentMethodType)}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select a method" />
                     </SelectTrigger>
                     <SelectContent>
                       {allowedPaymentMethods.includes(PaymentMethodType.CARD) && (
                         <SelectItem value={PaymentMethodType.CARD}>
-                          <div className="flex items-center gap-2">
-                            <CreditCard className="h-4 w-4" />
-                            Credit/Debit Card
-                          </div>
-                        </SelectItem>
-                      )}
-                      {allowedPaymentMethods.includes(PaymentMethodType.VODAFONE_CASH) && (
-                        <SelectItem value={PaymentMethodType.VODAFONE_CASH}>
-                          <div className="flex items-center gap-2">
-                            <Smartphone className="h-4 w-4" />
-                            Vodafone Cash
-                          </div>
-                        </SelectItem>
-                      )}
-                      {allowedPaymentMethods.includes(PaymentMethodType.INSTAPAY) && (
-                        <SelectItem value={PaymentMethodType.INSTAPAY}>
-                          <div className="flex items-center gap-2">
-                            <Wallet className="h-4 w-4" />
-                            Instapay
-                          </div>
-                        </SelectItem>
-                      )}
-                      {allowedPaymentMethods.includes(PaymentMethodType.FAWRY) && (
-                        <SelectItem value={PaymentMethodType.FAWRY}>
-                          <div className="flex items-center gap-2">
-                            <CreditCard className="h-4 w-4" />
-                            Fawry
-                          </div>
+                          <div className="flex items-center gap-2"><CreditCard className="h-4 w-4" />Credit/Debit Card</div>
                         </SelectItem>
                       )}
                       {allowedPaymentMethods.includes(PaymentMethodType.BANK_ACCOUNT) && (
                         <SelectItem value={PaymentMethodType.BANK_ACCOUNT}>
-                          <div className="flex items-center gap-2">
-                            <Building className="h-4 w-4" />
-                            Bank Account
-                          </div>
+                          <div className="flex items-center gap-2"><Building className="h-4 w-4" />Bank Account</div>
+                        </SelectItem>
+                      )}
+                      {allowedPaymentMethods.includes(PaymentMethodType.VODAFONE_CASH) && (
+                        <SelectItem value={PaymentMethodType.VODAFONE_CASH}>
+                          <div className="flex items-center gap-2"><Smartphone className="h-4 w-4" />Vodafone Cash</div>
+                        </SelectItem>
+                      )}
+                      {allowedPaymentMethods.includes(PaymentMethodType.INSTAPAY) && (
+                        <SelectItem value={PaymentMethodType.INSTAPAY}>
+                          <div className="flex items-center gap-2"><Wallet className="h-4 w-4" />Instapay</div>
+                        </SelectItem>
+                      )}
+                      {allowedPaymentMethods.includes(PaymentMethodType.FAWRY) && (
+                        <SelectItem value={PaymentMethodType.FAWRY}>
+                          <div className="flex items-center gap-2"><CreditCard className="h-4 w-4" />Fawry</div>
                         </SelectItem>
                       )}
                     </SelectContent>
@@ -548,200 +431,103 @@ export function BillingTab() {
                   <>
                     <div className="space-y-2">
                       <Label htmlFor="cardholderName">Cardholder Name *</Label>
-                      <Input
-                        id="cardholderName"
-                        placeholder="John Doe"
-                        value={newPaymentData.cardholderName}
-                        onChange={(e) =>
-                          setNewPaymentData({ ...newPaymentData, cardholderName: e.target.value })
-                        }
-                      />
+                      <Input id="cardholderName" placeholder="John Doe" value={newPaymentData.cardholderName}
+                        onChange={(e) => setNewPaymentData({ ...newPaymentData, cardholderName: e.target.value })} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="cardNumber">Card Number *</Label>
-                      <Input
-                        id="cardNumber"
-                        placeholder="1234 5678 9012 3456"
-                        maxLength={19}
-                        value={newPaymentData.cardNumber}
+                      <Input id="cardNumber" placeholder="1234 5678 9012 3456" maxLength={19} value={newPaymentData.cardNumber}
                         onChange={(e) => {
-                          const value = e.target.value.replace(/\s/g, '');
-                          const formatted = value.match(/.{1,4}/g)?.join(' ') || value;
-                          setNewPaymentData({ ...newPaymentData, cardNumber: formatted });
-                        }}
-                      />
+                          const v = e.target.value.replace(/\s/g, "");
+                          setNewPaymentData({ ...newPaymentData, cardNumber: v.match(/.{1,4}/g)?.join(" ") || v });
+                        }} />
                     </div>
                     <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="expiryMonth">Month *</Label>
-                        <Input
-                          id="expiryMonth"
-                          placeholder="MM"
-                          maxLength={2}
-                          value={newPaymentData.expiryMonth}
-                          onChange={(e) =>
-                            setNewPaymentData({ ...newPaymentData, expiryMonth: e.target.value })
-                          }
-                        />
+                        <Input id="expiryMonth" placeholder="MM" maxLength={2} value={newPaymentData.expiryMonth}
+                          onChange={(e) => setNewPaymentData({ ...newPaymentData, expiryMonth: e.target.value })} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="expiryYear">Year *</Label>
-                        <Input
-                          id="expiryYear"
-                          placeholder="YYYY"
-                          maxLength={4}
-                          value={newPaymentData.expiryYear}
-                          onChange={(e) =>
-                            setNewPaymentData({ ...newPaymentData, expiryYear: e.target.value })
-                          }
-                        />
+                        <Input id="expiryYear" placeholder="YYYY" maxLength={4} value={newPaymentData.expiryYear}
+                          onChange={(e) => setNewPaymentData({ ...newPaymentData, expiryYear: e.target.value })} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="cvv">CVV *</Label>
-                        <Input
-                          id="cvv"
-                          type="password"
-                          placeholder="123"
-                          maxLength={4}
-                          value={newPaymentData.cvv}
-                          onChange={(e) =>
-                            setNewPaymentData({ ...newPaymentData, cvv: e.target.value })
-                          }
-                        />
+                        <Input id="cvv" type="password" placeholder="123" maxLength={4} value={newPaymentData.cvv}
+                          onChange={(e) => setNewPaymentData({ ...newPaymentData, cvv: e.target.value })} />
                       </div>
                     </div>
                   </>
                 )}
 
-                {/* Vodafone Cash form */}
+                {/* Vodafone Cash */}
                 {selectedPaymentType === PaymentMethodType.VODAFONE_CASH && (
                   <div className="space-y-2">
                     <Label htmlFor="vodafoneNumber">Vodafone Cash Number *</Label>
-                    <Input
-                      id="vodafoneNumber"
-                      placeholder="01XXXXXXXXX"
-                      value={newPaymentData.vodafoneNumber}
-                      onChange={(e) =>
-                        setNewPaymentData({ ...newPaymentData, vodafoneNumber: e.target.value })
-                      }
-                    />
+                    <Input id="vodafoneNumber" placeholder="01XXXXXXXXX" value={newPaymentData.vodafoneNumber}
+                      onChange={(e) => setNewPaymentData({ ...newPaymentData, vodafoneNumber: e.target.value })} />
                   </div>
                 )}
 
-                {/* Instapay form */}
+                {/* Instapay */}
                 {selectedPaymentType === PaymentMethodType.INSTAPAY && (
                   <div className="space-y-2">
                     <Label htmlFor="instapayId">Instapay ID *</Label>
-                    <Input
-                      id="instapayId"
-                      placeholder="Your Instapay ID"
-                      value={newPaymentData.instapayId}
-                      onChange={(e) =>
-                        setNewPaymentData({ ...newPaymentData, instapayId: e.target.value })
-                      }
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Enter your phone number or email registered with Instapay
-                    </p>
+                    <Input id="instapayId" placeholder="Your Instapay ID" value={newPaymentData.instapayId}
+                      onChange={(e) => setNewPaymentData({ ...newPaymentData, instapayId: e.target.value })} />
+                    <p className="text-xs text-muted-foreground">Enter your phone number or email registered with Instapay</p>
                   </div>
                 )}
 
-                {/* Fawry form */}
+                {/* Fawry */}
                 {selectedPaymentType === PaymentMethodType.FAWRY && (
                   <div className="space-y-2">
                     <Label htmlFor="fawryNumber">Fawry Reference Number *</Label>
-                    <Input
-                      id="fawryNumber"
-                      placeholder="Your Fawry number"
-                      value={newPaymentData.fawryNumber}
-                      onChange={(e) =>
-                        setNewPaymentData({ ...newPaymentData, fawryNumber: e.target.value })
-                      }
-                    />
+                    <Input id="fawryNumber" placeholder="Your Fawry number" value={newPaymentData.fawryNumber}
+                      onChange={(e) => setNewPaymentData({ ...newPaymentData, fawryNumber: e.target.value })} />
                   </div>
                 )}
 
-                {/* Bank Account form */}
+                {/* Bank Account */}
                 {selectedPaymentType === PaymentMethodType.BANK_ACCOUNT && (
                   <>
                     <div className="space-y-2">
                       <Label htmlFor="accountHolderName">Account Holder Name *</Label>
-                      <Input
-                        id="accountHolderName"
-                        placeholder="John Doe"
-                        value={newPaymentData.accountHolderName}
-                        onChange={(e) =>
-                          setNewPaymentData({ ...newPaymentData, accountHolderName: e.target.value })
-                        }
-                      />
+                      <Input id="accountHolderName" placeholder="John Doe" value={newPaymentData.accountHolderName}
+                        onChange={(e) => setNewPaymentData({ ...newPaymentData, accountHolderName: e.target.value })} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="bankName">Bank Name *</Label>
-                      <Input
-                        id="bankName"
-                        placeholder="e.g., National Bank of Egypt"
-                        value={newPaymentData.bankName}
-                        onChange={(e) =>
-                          setNewPaymentData({ ...newPaymentData, bankName: e.target.value })
-                        }
-                      />
+                      <Input id="bankName" placeholder="e.g., National Bank of Egypt" value={newPaymentData.bankName}
+                        onChange={(e) => setNewPaymentData({ ...newPaymentData, bankName: e.target.value })} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="accountNumber">Account Number *</Label>
-                      <Input
-                        id="accountNumber"
-                        placeholder="XXXXXXXXXXXX"
-                        value={newPaymentData.accountNumber}
-                        onChange={(e) =>
-                          setNewPaymentData({ ...newPaymentData, accountNumber: e.target.value })
-                        }
-                      />
+                      <Input id="accountNumber" placeholder="XXXXXXXXXXXX" value={newPaymentData.accountNumber}
+                        onChange={(e) => setNewPaymentData({ ...newPaymentData, accountNumber: e.target.value })} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="iban">IBAN (Optional)</Label>
-                      <Input
-                        id="iban"
-                        placeholder="EGXXXXXXXXXXXXXXXXXXXXXXXXX"
-                        value={newPaymentData.iban}
-                        onChange={(e) =>
-                          setNewPaymentData({ ...newPaymentData, iban: e.target.value })
-                        }
-                      />
+                      <Input id="iban" placeholder="EGXXXXXXXXXXXXXXXXXXXXXXXXX" value={newPaymentData.iban}
+                        onChange={(e) => setNewPaymentData({ ...newPaymentData, iban: e.target.value })} />
                     </div>
                   </>
                 )}
 
                 <p className="text-xs text-muted-foreground">
-                  🔒 Your {user?.role === 'Student' || user?.role === 'Parent' ? 'payment' : 'payout'} information is encrypted and stored securely.
+                  🔒 Your {labels.methodWord.toLowerCase()} information is encrypted and stored securely.
                 </p>
               </div>
+
               <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsAddPaymentDialogOpen(false);
-                    setNewPaymentData({
-                      cardNumber: "",
-                      cardholderName: "",
-                      expiryMonth: "",
-                      expiryYear: "",
-                      cvv: "",
-                      vodafoneNumber: "",
-                      instapayId: "",
-                      fawryNumber: "",
-                      accountHolderName: "",
-                      bankName: "",
-                      accountNumber: "",
-                      iban: "",
-                    });
-                  }}
-                  disabled={isAddingPayment}
-                >
+                <Button variant="outline" onClick={() => { handleOpenDialog(false); resetForm(); }} disabled={isAddingPayment}>
                   Cancel
                 </Button>
                 <Button onClick={handleAddPaymentMethod} disabled={isAddingPayment}>
                   {isAddingPayment && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Add {user?.role === 'Student' || user?.role === 'Parent' ? 'Payment' : 'Payout'} Method
+                  Add {labels.methodWord} Method
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -752,21 +538,15 @@ export function BillingTab() {
       <AlertDialog open={!!paymentToRemove} onOpenChange={() => setPaymentToRemove(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              Remove {user?.role === 'Student' || user?.role === 'Parent' ? 'Payment' : 'Payout'} Method?
-            </AlertDialogTitle>
+            <AlertDialogTitle>Remove {labels.methodWord} Method?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove this {user?.role === 'Student' || user?.role === 'Parent' ? 'payment' : 'payout'} method? 
-              This action cannot be undone and you'll need to add it again if needed.
+              Are you sure you want to remove this {labels.methodWord.toLowerCase()} method?
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isRemovingPayment}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleRemovePaymentMethod}
-              disabled={isRemovingPayment}
-              className="bg-destructive hover:bg-destructive/90"
-            >
+            <AlertDialogAction onClick={handleRemovePaymentMethod} disabled={isRemovingPayment} className="bg-destructive hover:bg-destructive/90">
               {isRemovingPayment && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Remove Method
             </AlertDialogAction>

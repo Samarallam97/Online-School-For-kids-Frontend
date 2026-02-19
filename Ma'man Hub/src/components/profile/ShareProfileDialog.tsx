@@ -90,7 +90,7 @@ export function ShareProfileDialog({ userId, userName, trigger }: ShareProfileDi
   };
 
   const shareToTwitter = () => {
-    const text = `Check out ${userName}'s profile on EduPlatform!`;
+    const text = `Check out ${userName}'s profile on Ma'man!`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(profileUrl)}`;
     window.open(twitterUrl, '_blank', 'width=600,height=400');
   };
@@ -102,12 +102,12 @@ export function ShareProfileDialog({ userId, userName, trigger }: ShareProfileDi
 
   const shareViaEmail = () => {
     const subject = `Check out ${userName}'s profile`;
-    const body = `I thought you might be interested in ${userName}'s profile on EduPlatform:\n\n${profileUrl}`;
+    const body = `I thought you might be interested in ${userName}'s profile on Ma'man:\n\n${profileUrl}`;
     window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
   const shareViaWhatsApp = () => {
-    const text = `Check out ${userName}'s profile on EduPlatform: ${profileUrl}`;
+    const text = `Check out ${userName}'s profile on Ma'man: ${profileUrl}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, '_blank');
   };
