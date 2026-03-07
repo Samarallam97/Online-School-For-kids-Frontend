@@ -13,16 +13,31 @@ import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import EmailVerificationPage from "./pages/auth/EmailVerificationPage";
 
-// Profile Pages
-import AdminProfilePage from "./pages/profile/AdminProfilePage";
-import CreatorProfilePage from "./pages/profile/CreatorProfilePage";
-import ParentProfilePage from "./pages/profile/ParentProfilePage";
-import StudentProfilePage from "./pages/profile/StudentProfilePage";
+// Course Pages
+import CoursesCatalogPage from "./pages/courses/CoursesCatalogPage";
+import CourseDetailPage from "./pages/courses/CourseDetailPage";
+import CoursePlayerPage from "./pages/courses/CoursePlayerPage";
 
-// spcialist pages
-import SpecialistProfilePage from "./pages/profile/SpecialistProfilePage";
+// Cart & Checkout Pages
+import CartPage from "./pages/cart/CartPage";
+import CheckoutPage from "./pages/checkout/CheckoutPage";
+import OrderConfirmationPage from "./pages/checkout/OrderConfirmationPage";
+
+// Dashboard Pages
+import StudentDashboardPage from "./pages/dashboard/StudentDashboardPage";
+import MyCoursesPage from "./pages/dashboard/MyCoursesPage";
+import CourseProgressPage from "./pages/dashboard/CourseProgressPage";
+
+// Quiz Pages
+import QuizPage from "./pages/quiz/QuizPage";
+
+// Messages Pages
+import MessagesPage from "./pages/messages/MessagesPage";
+import GroupChatPage from "./pages/messages/GroupChatPage";
 
 // Admin Pages
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
+import FinancialOverviewPage from "./pages/admin/FinancialOverviewPage";
 import UserManagementPage from "./pages/admin/UserManagementPage";
 import ContentModerationPage from "./pages/admin/ContentModerationPage";
 
@@ -30,27 +45,21 @@ import ContentModerationPage from "./pages/admin/ContentModerationPage";
 import UploadVideoPage from "./pages/creator/UploadVideoPage";
 import CreatorDashboardPage from "./pages/creator/CreatorDashboardPage";
 
-// Dashboard Pages
-import CourseProgressPage from "./pages/dashboard/CourseProgressPage";
-
-// Cart & Checkout Pages
-import CartPage from "./pages/cart/CartPage";
-import CheckoutPage from "./pages/checkout/CheckoutPage";
-import OrderConfirmationPage from "./pages/checkout/OrderConfirmationPage";
-
-// Course Pages
-import CoursesCatalogPage from "./pages/courses/CoursesCatalogPage";
-import CourseDetailPage from "./pages/courses/CourseDetailPage";
-import CoursePlayerPage from "./pages/courses/CoursePlayerPage";
-
-// Quiz Pages
-import QuizPage from "./pages/quiz/QuizPage";
-
 // Live Session Pages
 import LiveSessionPage from "./pages/live/LiveSessionPage";
 import GoLivePage from "./pages/creator/GoLivePage";
+
+// Profile Pages
+import AdminProfilePage from "./pages/profile/AdminProfilePage";
+import CreatorProfilePage from "./pages/profile/CreatorProfilePage";
+import ParentProfilePage from "./pages/profile/ParentProfilePage";
+import StudentProfilePage from "./pages/profile/StudentProfilePage";
+import SpecialistProfilePage from "./pages/profile/SpecialistProfilePage";
 import AcceptInvitePage from "./pages/profile/AcceptInvitePage";
 import PublicProfilePage from "./pages/profile/PublicProfilePage";
+
+// Parent Pages
+import ParentDashboardPage from "./pages/parent/ParentDashboardPage";
 
 const queryClient = new QueryClient();
 
@@ -72,30 +81,37 @@ const App = () => (
 
           {/* Creator Routes */}
           <Route path="/creator" element={<CreatorDashboardPage />} />
-          <Route path="/content-creator/profile" element={<CreatorProfilePage />} />
+          <Route
+            path="/content-creator/profile"
+            element={<CreatorProfilePage />}
+          />
           <Route path="/creator/upload" element={<UploadVideoPage />} />
           <Route path="/creator/go-live" element={<GoLivePage />} />
 
           {/* Admin Routes */}
+          <Route path="/admin" element={<AdminDashboardPage />} />
           <Route path="/admin/users" element={<UserManagementPage />} />
-          <Route path="/admin/profile" element={<AdminProfilePage />} />
           <Route path="/admin/moderation" element={<ContentModerationPage />} />
-
+          <Route path="/admin/financial" element={<FinancialOverviewPage />} />
+          <Route path="/admin/profile" element={<AdminProfilePage />} />
           {/* Parent Routes */}
           <Route path="/parent/profile" element={<ParentProfilePage />} />
+          <Route path="/parent" element={<ParentDashboardPage />} />
 
           <Route path="/profile/:userId" element={<PublicProfilePage />} />
-          
+
           {/* Specialist Routes */}
           <Route
             path="/specialist/profile"
             element={<SpecialistProfilePage />}
           />
 
-          {/* Student Dashboard Routes */}
+          {/* Student Routes */}
+          <Route path="/dashboard" element={<StudentDashboardPage />} />
+          <Route path="/my-courses" element={<MyCoursesPage />} />
+          <Route path="/profile" element={<StudentProfilePage />} />
           <Route path="student/profile" element={<StudentProfilePage />} />
           <Route path="student/accept-invite" element={<AcceptInvitePage />} />
-
 
           {/* Cart & Checkout Routes */}
           <Route path="/cart" element={<CartPage />} />
@@ -107,6 +123,10 @@ const App = () => (
 
           {/* Live Session Routes */}
           <Route path="/live/:sessionId" element={<LiveSessionPage />} />
+
+          {/* Messages Routes */}
+          <Route path="/messages" element={<MessagesPage />} />
+          <Route path="/groups" element={<GroupChatPage />} />
 
           {/* Course Routes */}
           <Route path="/courses" element={<CoursesCatalogPage />} />
