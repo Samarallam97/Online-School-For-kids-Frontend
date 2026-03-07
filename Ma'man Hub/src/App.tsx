@@ -12,6 +12,10 @@ import RegisterPage from "./pages/auth/RegisterPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import EmailVerificationPage from "./pages/auth/EmailVerificationPage";
+import AuthCallbackPage from "./pages/auth/AuthCallbackPage.tsx";
+import CompleteProfilePage from "./pages/auth/CompleteProfilePage";
+import RegistrationPendingPage from "./pages/auth/RegistrationPendingPage";
+
 
 // Profile Pages
 import AdminProfilePage from "./pages/profile/AdminProfilePage";
@@ -69,6 +73,12 @@ const App = () => (
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/verify-email" element={<EmailVerificationPage />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage  />} />
+          <Route path="/complete-profile" element={<CompleteProfilePage   />} />
+          <Route path="/registration-pending" element={<RegistrationPendingPage />} />
+
+
+
 
           {/* Creator Routes */}
           <Route path="/creator" element={<CreatorDashboardPage />} />

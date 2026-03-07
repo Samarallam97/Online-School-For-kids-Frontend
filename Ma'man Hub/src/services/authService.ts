@@ -36,6 +36,13 @@ export interface AuthResponse {
   expiresAt: string;
 }
 
+const ROLE_MAP: Record<number, string> = {
+  1: 'Student',
+  2: 'Parent',
+  3: 'ContentCreator',
+  4: 'Specialist',
+};
+
 export const authService = {
 
   register: async (data: RegisterData) => {
@@ -110,10 +117,27 @@ export const authService = {
     return response.data;
   },
 
-  //TODO
-  googleAuth: () => {
-    // Redirect to backend OAuth endpoint
+ googleAuth: () => {
     window.location.href = `${api.defaults.baseURL}/Auth/google`;
+  },
+
+  completeGoogleRegistration: async (
+    data: CompleteGoogleRegistrationData
+  ): Promise<AuthResponse> => {
+    const response = await api.post('/Auth/google/complete-registration', {
+      tempToken: data.tempToken,
+      role: ROLE_MAP[data.role],
+      dateOfBirth: data.dateOfBirth.toISOString(),
+      country: data.country,
+      ...(data.expertise    && { expertise: data.expertise }),
+      ...(data.cvLink       && { cvLink: data.cvLink }),
+      ...(data.portfolioUrl && { portfolioUrl: data.portfolioUrl }),
+    });
+
+    const authData: AuthResponse = response.data;
+    localStorage.setItem('access_token', authData.accessToken);
+    localStorage.setItem('refresh_token', authData.refreshToken);
+    return authData;
   },
 
 };

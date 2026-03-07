@@ -233,9 +233,9 @@ export default function RegisterPage() {
   }
 };
 
-  const handleGoogleLogin = () => {
-    authService.googleAuth();
-  };
+const handleGoogleLogin = () => {
+  authService.googleAuth(); // no role arg needed
+};
 
   return (
     <div className="min-h-screen flex">
