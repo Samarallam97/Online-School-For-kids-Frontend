@@ -92,7 +92,7 @@ export function CreatorPayoutSettingsTab() {
       setIsLoading(true);
       const [methods, payoutsData] = await Promise.all([
         userService.getPaymentMethods(),
-        creatorService.getPayouts({ limit: 5 }),
+        userService.getPayouts({ limit: 5 }),
       ]);
       setPaymentMethods(methods);
       setNextPayout(payoutsData.nextPayout || null);

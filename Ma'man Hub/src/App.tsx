@@ -33,6 +33,7 @@ import ContentModerationPage from "./pages/admin/ContentModerationPage";
 // Creator Pages
 import UploadVideoPage from "./pages/creator/UploadVideoPage";
 import CreatorDashboardPage from "./pages/creator/CreatorDashboardPage";
+import AdminUserDetailPage from "@/pages/admin/AdminUserDetailPage";
 
 // Dashboard Pages
 import CourseProgressPage from "./pages/dashboard/CourseProgressPage";
@@ -90,6 +91,7 @@ const App = () => (
           <Route path="/admin/users" element={<UserManagementPage />} />
           <Route path="/admin/profile" element={<AdminProfilePage />} />
           <Route path="/admin/moderation" element={<ContentModerationPage />} />
+          <Route path="/admin/users/:userId" element={<AdminUserDetailPage />} />
 
           {/* Parent Routes */}
           <Route path="/parent/profile" element={<ParentProfilePage />} />
