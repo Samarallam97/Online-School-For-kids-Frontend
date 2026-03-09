@@ -26,6 +26,7 @@ import { SocialLinksTab } from "@/components/profile/creator/SocialLinksTab";
 import { BillingTab } from "@/components/profile/parent/BillingTab";
 import { CertificationsTab } from "@/components/profile/CertificationsTab";
 import { CoursesTab } from "@/components/profile/CoursesTab";
+import { PayoutsTab } from "@/components/profile/PayoutsTab";
 
 const COUNTRIES = ["Egypt", "Iraq", "Jordan", "Palestine", "Saudi Arabia", "Syria", "Other"];
 
@@ -35,25 +36,6 @@ interface CreatorStats {
   totalRevenue: number;
   averageRating: number;
 }
-
-// interface CreatorCertification {
-//   id: string;
-//   name: string;
-//   issuer: string;
-//   year: string;
-//   fileUrl?: string;
-//   fileName?: string;
-// }
-
-// interface CreatorCourse {
-//   id: string;
-//   title: string;
-//   thumbnail?: string;
-//   studentsCount: number;
-//   rating: number;
-//   category: string;
-//   isPublishedOnProfile: boolean;
-// }
 
 export default function CreatorProfilePage() {
   const { toast } = useToast();
@@ -220,13 +202,15 @@ export default function CreatorProfilePage() {
         </Card>
 
         <Tabs value={currentTab} onValueChange={setCurrentTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 md:grid-cols-7">
+          {/* 8 tabs: added "payouts" */}
+          <TabsList className="grid w-full grid-cols-4 md:grid-cols-8">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="courses">Courses</TabsTrigger>
             <TabsTrigger value="certifications">Certifications</TabsTrigger>
             <TabsTrigger value="experience">Experience</TabsTrigger>
             <TabsTrigger value="social">Social Links</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="payouts">Payouts</TabsTrigger>
             <TabsTrigger value="payment">Billing</TabsTrigger>
           </TabsList>
 
@@ -294,22 +278,12 @@ export default function CreatorProfilePage() {
             </Card>
           </TabsContent>
 
-
-         <TabsContent value="courses"><CoursesTab /></TabsContent>
-
-          {/* ── Certifications Tab ── */}
-  <TabsContent value="certifications">
-            <CertificationsTab
-            />
-          </TabsContent>
+          <TabsContent value="courses"><CoursesTab /></TabsContent>
+          <TabsContent value="certifications"><CertificationsTab /></TabsContent>
           <TabsContent value="experience"><ExperienceTab /></TabsContent>
           <TabsContent value="social"><SocialLinksTab /></TabsContent>
-
-          {/* ── Notifications — unified component ── */}
-          <TabsContent value="notifications">
-            <NotificationsTab role="creator" />
-          </TabsContent>
-
+          <TabsContent value="notifications"><NotificationsTab role="creator" /></TabsContent>
+          <TabsContent value="payouts"><PayoutsTab role="creator" /></TabsContent>
           <TabsContent value="payment"><BillingTab /></TabsContent>
         </Tabs>
       </div>

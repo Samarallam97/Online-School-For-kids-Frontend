@@ -25,6 +25,7 @@ import { CertificationsTab } from "@/components/profile/CertificationsTab";
 import { AvailabilityTab } from "@/components/profile/AvailabilityTab";
 import { RatesTab } from "@/components/profile/RatesTab";
 import { ShareProfileDialog } from "@/components/profile/ShareProfileDialog";
+import { PayoutsTab } from "@/components/profile/PayoutsTab";
 import { Link } from "react-router-dom";
 
 const COUNTRIES = ["Egypt", "Iraq", "Jordan", "Palestine", "Saudi Arabia", "Syria", "Other"];
@@ -43,8 +44,6 @@ export default function SpecialistProfilePage() {
   const [showOtherCountry, setShowOtherCountry] = useState(false);
   const [expertiseTags, setExpertiseTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
-
- 
 
   useEffect(() => {
     const load = async () => {
@@ -114,7 +113,6 @@ export default function SpecialistProfilePage() {
 
   const addTag = () => { const t = newTag.trim(); if (t && !expertiseTags.includes(t)) setExpertiseTags([...expertiseTags, t]); setNewTag(""); };
 
-
   if (isLoading) return <DashboardLayout><div className="flex h-[400px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></DashboardLayout>;
   if (!userData) return <DashboardLayout><div className="flex h-[400px] items-center justify-center"><p className="text-muted-foreground">Failed to load profile</p></div></DashboardLayout>;
 
@@ -122,42 +120,43 @@ export default function SpecialistProfilePage() {
     <DashboardLayout>
       <div className="mx-auto max-w-4xl space-y-6">
 
-{/* ── Header Card ── */}
-<Card>
-  <CardContent className="pt-6">
-    <div className="flex flex-col items-center gap-6 sm:flex-row">
-      <div className="relative">
-        <Avatar className="h-24 w-24">
-          <AvatarImage src={userData.profilePictureUrl} alt={userData.fullName} />
-          <AvatarFallback className="text-2xl">{getInitials()}</AvatarFallback>
-        </Avatar>
-        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-        <Button size="icon" variant="secondary" className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full" onClick={() => fileInputRef.current?.click()} disabled={isUploadingImage}>
-          {isUploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-        </Button>
-      </div>
-      <div className="flex-1 text-center sm:text-left">
-        <div className="flex items-center justify-center gap-2 sm:justify-start">
-          <h1 className="text-2xl font-bold">{userData.fullName}</h1>
-          <Badge className="bg-purple-500">Specialist</Badge>
-        </div>
-        <p className="text-muted-foreground">{userData.professionalTitle || "Learning Specialist"}</p>
-        <div className="mt-2 flex flex-wrap justify-center gap-4 text-sm text-muted-foreground sm:justify-start">
-          <span className="flex items-center gap-1"><Star className="h-4 w-4 text-yellow-500" />{userData.rating || 0} Rating</span>
-          <span className="flex items-center gap-1"><Users className="h-4 w-4" />{userData.studentsHelped || 0} Students</span>
-          <span className="flex items-center gap-1"><Briefcase className="h-4 w-4" />{userData.yearsOfExperience || 0} Years</span>
-        </div>
-      </div>
-      <div className="flex gap-2">
-        <Link to="/messages"><Button variant="outline" size="icon"><MessageSquare className="h-4 w-4" /></Button></Link>
-        <ShareProfileDialog userId={userData.id} userName={userData.fullName} />
-      </div>
-    </div>
-  </CardContent>
-</Card>
+        {/* ── Header Card ── */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center gap-6 sm:flex-row">
+              <div className="relative">
+                <Avatar className="h-24 w-24">
+                  <AvatarImage src={userData.profilePictureUrl} alt={userData.fullName} />
+                  <AvatarFallback className="text-2xl">{getInitials()}</AvatarFallback>
+                </Avatar>
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                <Button size="icon" variant="secondary" className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full" onClick={() => fileInputRef.current?.click()} disabled={isUploadingImage}>
+                  {isUploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                </Button>
+              </div>
+              <div className="flex-1 text-center sm:text-left">
+                <div className="flex items-center justify-center gap-2 sm:justify-start">
+                  <h1 className="text-2xl font-bold">{userData.fullName}</h1>
+                  <Badge className="bg-purple-500">Specialist</Badge>
+                </div>
+                <p className="text-muted-foreground">{userData.professionalTitle || "Learning Specialist"}</p>
+                <div className="mt-2 flex flex-wrap justify-center gap-4 text-sm text-muted-foreground sm:justify-start">
+                  <span className="flex items-center gap-1"><Star className="h-4 w-4 text-yellow-500" />{userData.rating || 0} Rating</span>
+                  <span className="flex items-center gap-1"><Users className="h-4 w-4" />{userData.studentsHelped || 0} Students</span>
+                  <span className="flex items-center gap-1"><Briefcase className="h-4 w-4" />{userData.yearsOfExperience || 0} Years</span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Link to="/messages"><Button variant="outline" size="icon"><MessageSquare className="h-4 w-4" /></Button></Link>
+                <ShareProfileDialog userId={userData.id} userName={userData.fullName} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 md:grid-cols-8">
+          {/* 9 tabs: added "payouts" */}
+          <TabsList className="grid w-full grid-cols-4 md:grid-cols-9">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="availability">Available Slots</TabsTrigger>
             <TabsTrigger value="rates">Rates</TabsTrigger>
@@ -165,6 +164,7 @@ export default function SpecialistProfilePage() {
             <TabsTrigger value="experience">Experience</TabsTrigger>
             <TabsTrigger value="social">Social Links</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="payouts">Payouts</TabsTrigger>
             <TabsTrigger value="billing">Billing</TabsTrigger>
           </TabsList>
 
@@ -238,15 +238,11 @@ export default function SpecialistProfilePage() {
 
           <TabsContent value="availability"><AvailabilityTab /></TabsContent>
           <TabsContent value="rates"><RatesTab /></TabsContent>
-
-          <TabsContent value="certifications">
-            <CertificationsTab
-            />
-          </TabsContent>
-
+          <TabsContent value="certifications"><CertificationsTab /></TabsContent>
           <TabsContent value="experience"><ExperienceTab /></TabsContent>
           <TabsContent value="social"><SocialLinksTab /></TabsContent>
           <TabsContent value="notifications"><NotificationsTab role="specialist" /></TabsContent>
+          <TabsContent value="payouts"><PayoutsTab role="specialist" /></TabsContent>
           <TabsContent value="billing"><BillingTab /></TabsContent>
         </Tabs>
       </div>

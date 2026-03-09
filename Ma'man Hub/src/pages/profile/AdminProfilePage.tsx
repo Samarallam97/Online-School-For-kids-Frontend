@@ -1,4 +1,7 @@
 import { useState, useEffect, useRef } from "react";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import {
   Card, CardContent, CardHeader, CardTitle, CardDescription,
@@ -17,16 +20,21 @@ import {
 import {
   Mail, Phone, Camera, Shield, Key, Bell, Activity, Lock,
   History, AlertTriangle, Loader2, Save, X, Eye, EyeOff, MapPin,
+  UserPlus, Copy, Check,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import QRCode from "react-qr-code";
+import { OtpInput } from "@/components/ui/OtpInput";
 import { userService, ProfileDto } from "@/services/userService";
+import { authService } from "@/services/authService";
+
 import {
   adminService,
   AdminSecuritySettingsDto,
   AdminActivityLogDto,
 } from "@/services/adminService";
 
-// ─── Security section config ──────────────────────────────────────────────────
+
 const SECURITY_SECTIONS: {
   title: string;
   rows: {
@@ -70,7 +78,39 @@ const SECURITY_SECTIONS: {
   },
 ];
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+
+const createAdminSchema = z.object({
+  fullName: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Enter a valid email address"),
+  password: z
+    .string()
+    .min(8, "At least 8 characters")
+    .regex(/[A-Z]/, "One uppercase letter required")
+    .regex(/[a-z]/, "One lowercase letter required")
+    .regex(/\d/, "One number required")
+    .regex(/[@$!%*?&#]/, "One special character required"),
+  confirmPassword: z.string(),
+}).refine(d => d.password === d.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+type CreateAdminForm = z.infer<typeof createAdminSchema>;
+
+function generatePassword(): string {
+  const u = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const l = "abcdefghjkmnpqrstuvwxyz";
+  const d = "23456789";
+  const s = "@$!%*?&#";
+  const all = u + l + d + s;
+  const pick = (str: string) => str[Math.floor(Math.random() * str.length)];
+  const required = [pick(u), pick(l), pick(d), pick(s)];
+  const rest = Array.from({ length: 8 }, () => pick(all));
+  return [...required, ...rest].sort(() => Math.random() - 0.5).join("");
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
+
 export default function AdminProfilePage() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -85,7 +125,7 @@ export default function AdminProfilePage() {
 
   // ── Security ──────────────────────────────────────────────────────────────
   const [security, setSecurity] = useState<AdminSecuritySettingsDto>({
-    twoFactorEnabled: false,
+     twoFactorEnabled: false, 
     loginNotifications: false,
     suspiciousActivityAlerts: false,
   });
@@ -104,6 +144,42 @@ export default function AdminProfilePage() {
   const [activityTotal, setActivityTotal] = useState(0);
   const [activityPage, setActivityPage] = useState(1);
   const ACTIVITY_LIMIT = 10;
+
+  // ── Create Admin dialog ───────────────────────────────────────────────────
+  const [showCreateAdmin, setShowCreateAdmin] = useState(false);
+  const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showNewConfirm, setShowNewConfirm] = useState(false);
+  const [copiedPassword, setCopiedPassword] = useState(false);
+
+  const isSuperAdmin = !!(userData as any)?.isSuperAdmin;
+
+ 
+  
+  const {
+    register: registerAdmin,
+    handleSubmit: handleAdminSubmit,
+    setValue: setAdminValue,
+    watch: watchAdmin,
+    reset: resetAdmin,
+    formState: { errors: adminErrors },
+  } = useForm<CreateAdminForm>({ resolver: zodResolver(createAdminSchema) });
+
+  const newAdminPassword = watchAdmin("password", "");
+
+
+  // ── 2FA Setup Dialog ──────────────────────────────────────────────────────
+const [show2FADialog, setShow2FADialog]         = useState(false);
+const [twoFAStep, setTwoFAStep]                 = useState<"qr" | "confirm">("qr");
+const [twoFASecret, setTwoFASecret]             = useState("");
+const [twoFAQrUri, setTwoFAQrUri]               = useState("");
+const [twoFACode, setTwoFACode]                 = useState("");
+const [isConfirming2FA, setIsConfirming2FA]     = useState(false);
+
+// ── 2FA Disable Dialog ────────────────────────────────────────────────────
+const [show2FADisableDialog, setShow2FADisableDialog] = useState(false);
+const [disableCode, setDisableCode]                   = useState("");
+const [isDisabling2FA, setIsDisabling2FA]             = useState(false);
 
   // ── Load ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -128,7 +204,7 @@ export default function AdminProfilePage() {
       try {
         const data = await adminService.getSecuritySettings();
         setSecurity(data);
-      } catch { /* keep defaults */ }
+      } catch { }
       finally { setIsSecurityLoading(false); }
     };
 
@@ -168,7 +244,8 @@ export default function AdminProfilePage() {
     if (file.size > 5 * 1024 * 1024) return toast({ title: "Too large", description: "Max 5MB", variant: "destructive" });
     try {
       setIsUploadingImage(true);
-      const formData = new FormData(); formData.append("profilePicture", file);
+      const formData = new FormData();
+      formData.append("profilePicture", file);
       const res = await userService.uploadProfilePicture(formData);
       setUserData(prev => prev ? { ...prev, profilePictureUrl: res.profilePictureUrl } : null);
       const u = JSON.parse(localStorage.getItem("user") || "{}");
@@ -210,18 +287,74 @@ export default function AdminProfilePage() {
     setIsEditing(false);
   };
 
-  // ── Security toggle — optimistic, auto-save ───────────────────────────────
-  const handleSecurityToggle = async (key: keyof AdminSecuritySettingsDto, value: boolean) => {
-    const updated = { ...security, [key]: value };
-    setSecurity(updated);
-    try {
-      setIsSavingSecurity(true);
-      await adminService.updateSecuritySettings(updated);
-    } catch (e: any) {
-      setSecurity(prev => ({ ...prev, [key]: !value })); // revert
-      toast({ title: "Error", description: e.response?.data?.message || "Failed to update", variant: "destructive" });
-    } finally { setIsSavingSecurity(false); }
-  };
+  // ── Security toggles ──────────────────────────────────────────────────────
+const handleSecurityToggle = async (key: keyof AdminSecuritySettingsDto, value: boolean) => {
+  if (key === "twoFactorEnabled") {
+    if (value) {
+      await handleOpen2FASetup();
+    } else {
+      setShow2FADisableDialog(true);
+    }
+    return;
+  }
+
+  const updated = { ...security, [key]: value };
+  setSecurity(updated);
+  try {
+    setIsSavingSecurity(true);
+    await adminService.updateSecuritySettings(updated);
+  } catch (e: any) {
+    setSecurity(prev => ({ ...prev, [key]: !value }));
+    toast({ title: "Error", description: e.response?.data?.message || "Failed to update", variant: "destructive" });
+  } finally {
+    setIsSavingSecurity(false);
+  }
+};
+
+// ── 2FA Setup ─────────────────────────────────────────────────────────────
+const handleOpen2FASetup = async () => {
+  try {
+    const data = await authService.setup2FA();
+    setTwoFASecret(data.secret);
+    setTwoFAQrUri(data.qrUri);
+    setTwoFAStep("qr");
+    setTwoFACode("");
+    setShow2FADialog(true);
+  } catch (e: any) {
+    toast({ title: "Error", description: e.response?.data?.error || "Failed to start 2FA setup", variant: "destructive" });
+  }
+};
+
+const handleConfirm2FA = async () => {
+  if (twoFACode.length !== 6) return;
+  setIsConfirming2FA(true);
+  try {
+    await authService.confirm2FA({ secret: twoFASecret, code: twoFACode });
+    setSecurity(prev => ({ ...prev, twoFactorEnabled: true }));
+    setShow2FADialog(false);
+    setTwoFACode("");
+    toast({ title: "2FA Enabled", description: "Your account is now protected with two-factor authentication." });
+  } catch (e: any) {
+    toast({ title: "Invalid code", description: "The code was incorrect or expired. Please try again.", variant: "destructive" });
+    setTwoFACode("");
+  } finally {
+    setIsConfirming2FA(false); }
+};
+
+const handleDisable2FA = async () => {
+  if (disableCode.length !== 6) return;
+  setIsDisabling2FA(true);
+  try {
+    await authService.disable2FA({ code: disableCode });
+    setSecurity(prev => ({ ...prev, twoFactorEnabled: false }));
+    setShow2FADisableDialog(false);
+    setDisableCode("");
+    toast({ title: "2FA Disabled", description: "Two-factor authentication has been removed from your account." });
+  } catch (e: any) {
+    toast({ title: "Invalid code", description: "Incorrect code. Please try again.", variant: "destructive" });
+    setDisableCode("");
+  } finally { setIsDisabling2FA(false); }
+};
 
   // ── Change password ───────────────────────────────────────────────────────
   const handleChangePassword = async () => {
@@ -240,6 +373,50 @@ export default function AdminProfilePage() {
     } catch (e: any) {
       toast({ title: "Error", description: e.response?.data?.message || "Incorrect current password or server error", variant: "destructive" });
     } finally { setIsChangingPassword(false); }
+  };
+
+  // ── Create Admin ──────────────────────────────────────────────────────────
+  const handleGeneratePassword = () => {
+    const pwd = generatePassword();
+    setAdminValue("password", pwd, { shouldValidate: true });
+    setAdminValue("confirmPassword", pwd, { shouldValidate: true });
+    setShowNewPassword(true);
+  };
+
+  const handleCopyPassword = async () => {
+    if (!newAdminPassword) return;
+    await navigator.clipboard.writeText(newAdminPassword);
+    setCopiedPassword(true);
+    setTimeout(() => setCopiedPassword(false), 2000);
+  };
+
+  const handleCloseCreateAdmin = () => {
+    resetAdmin();
+    setShowNewPassword(false);
+    setShowNewConfirm(false);
+    setShowCreateAdmin(false);
+  };
+
+  const onCreateAdmin = async (data: CreateAdminForm) => {
+    setIsCreatingAdmin(true);
+    try {
+      await adminService.createAdmin({
+        fullName: data.fullName,
+        email: data.email,
+        password: data.password,
+      });
+      toast({
+        title: "Admin created",
+        description: `${data.fullName} has been added as an administrator.`,
+      });
+      handleCloseCreateAdmin();
+    } catch (e: any) {
+      toast({
+        title: "Failed to create admin",
+        description: e.response?.data?.error || e.message || "Something went wrong.",
+        variant: "destructive",
+      });
+    } finally { setIsCreatingAdmin(false); }
   };
 
   // ── Helpers ───────────────────────────────────────────────────────────────
@@ -287,39 +464,64 @@ export default function AdminProfilePage() {
     <DashboardLayout>
       <div className="mx-auto max-w-4xl space-y-6">
 
-        {/* ── Header ── */}
+        {/* ── Header card ── */}
         <Card>
           <CardContent className="pt-6">
             <div className="flex flex-col items-center gap-6 sm:flex-row">
+              {/* Avatar */}
               <div className="relative">
                 <Avatar className="h-24 w-24">
                   <AvatarImage src={userData.profilePictureUrl} alt={userData.fullName} />
                   <AvatarFallback className="text-2xl bg-red-500 text-white">{getInitials()}</AvatarFallback>
                 </Avatar>
                 <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-                <Button size="icon" variant="secondary" className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full" onClick={() => fileInputRef.current?.click()} disabled={isUploadingImage}>
+                <Button
+                  size="icon" variant="secondary"
+                  className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingImage}
+                >
                   {isUploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
                 </Button>
               </div>
+
+              {/* Info */}
               <div className="flex-1 text-center sm:text-left">
-                <div className="flex items-center justify-center gap-2 sm:justify-start">
+                <div className="flex items-center justify-center gap-2 sm:justify-start flex-wrap">
                   <h1 className="text-2xl font-bold">{userData.fullName}</h1>
                   <Badge variant="destructive">
-                    <Shield className="mr-1 h-3 w-3" />{userData.role || "Super Admin"}
+                    <Shield className="mr-1 h-3 w-3" />
+                    {isSuperAdmin ? "Super Admin" : "Admin"}
                   </Badge>
                 </div>
                 <p className="text-muted-foreground">Platform Administrator</p>
                 <div className="mt-2 flex flex-wrap justify-center gap-3 text-sm text-muted-foreground sm:justify-start">
-                  <span className="flex items-center gap-1"><Activity className="h-4 w-4 text-green-500" />Active now</span>
+                  <span className="flex items-center gap-1">
+                    <Activity className="h-4 w-4 text-green-500" />Active now
+                  </span>
                   {security.twoFactorEnabled && (
-                    <span className="flex items-center gap-1"><Lock className="h-4 w-4 text-primary" />2FA Enabled</span>
+                    <span className="flex items-center gap-1">
+                      <Lock className="h-4 w-4 text-primary" />2FA Enabled
+                    </span>
                   )}
                 </div>
               </div>
+
+              {/* SuperAdmin-only: Add Admin button */}
+              {isSuperAdmin && (
+                <Button
+                  onClick={() => setShowCreateAdmin(true)}
+                  className="shrink-0 gap-2"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Add Admin
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
 
+        {/* ── Tabs ── */}
         <Tabs defaultValue="profile" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="profile">Profile</TabsTrigger>
@@ -327,7 +529,7 @@ export default function AdminProfilePage() {
             <TabsTrigger value="activity">Activity Log</TabsTrigger>
           </TabsList>
 
-          {/* ── Profile Tab ── */}
+          {/* ── Profile tab ── */}
           <TabsContent value="profile" className="space-y-6">
             <Card>
               <CardHeader>
@@ -392,7 +594,7 @@ export default function AdminProfilePage() {
             </Card>
           </TabsContent>
 
-          {/* ── Security Tab ── */}
+          {/* ── Security tab ── */}
           <TabsContent value="security">
             <Card>
               <CardHeader>
@@ -408,14 +610,9 @@ export default function AdminProfilePage() {
                   <>
                     {SECURITY_SECTIONS.map(({ title, rows }) => (
                       <div key={title} className="space-y-1">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                          {title}
-                        </p>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">{title}</p>
                         {rows.map(({ key, icon, iconBg, label, description }) => (
-                          <div
-                            key={key}
-                            className="flex items-center justify-between py-3 border-b last:border-0"
-                          >
+                          <div key={key} className="flex items-center justify-between py-3 border-b last:border-0">
                             <div className="flex items-center gap-3 flex-1">
                               <div className={`p-2 ${iconBg} rounded-lg flex-shrink-0`}>{icon}</div>
                               <div>
@@ -424,9 +621,7 @@ export default function AdminProfilePage() {
                               </div>
                             </div>
                             <div className="flex items-center gap-2 ml-4">
-                              {isSavingSecurity && (
-                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                              )}
+                              {isSavingSecurity && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
                               <Switch
                                 checked={security[key]}
                                 onCheckedChange={v => handleSecurityToggle(key, v)}
@@ -437,12 +632,7 @@ export default function AdminProfilePage() {
                         ))}
                       </div>
                     ))}
-
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => setShowPasswordDialog(true)}
-                    >
+                    <Button variant="outline" className="w-full" onClick={() => setShowPasswordDialog(true)}>
                       <Key className="mr-2 h-4 w-4" />Change Password
                     </Button>
                   </>
@@ -451,7 +641,7 @@ export default function AdminProfilePage() {
             </Card>
           </TabsContent>
 
-          {/* ── Activity Log Tab ── */}
+          {/* ── Activity Log tab ── */}
           <TabsContent value="activity">
             <Card>
               <CardHeader>
@@ -544,11 +734,7 @@ export default function AdminProfilePage() {
             })}
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => { setShowPasswordDialog(false); setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" }); }}
-              disabled={isChangingPassword}
-            >
+            <Button variant="outline" onClick={() => { setShowPasswordDialog(false); setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" }); }} disabled={isChangingPassword}>
               Cancel
             </Button>
             <Button onClick={handleChangePassword} disabled={isChangingPassword}>
@@ -558,6 +744,293 @@ export default function AdminProfilePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ── Create Admin Dialog (SuperAdmin only) ── */}
+      <Dialog open={showCreateAdmin} onOpenChange={handleCloseCreateAdmin}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                <UserPlus className="h-4 w-4 text-primary" />
+              </div>
+              Create Admin Account
+            </DialogTitle>
+            <DialogDescription>
+              Add a new administrator. They'll have full platform management
+              access but cannot create other admins or access Super Admin settings.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleAdminSubmit(onCreateAdmin)} className="space-y-4 py-2">
+            {/* Full Name */}
+            <div className="space-y-2">
+              <Label htmlFor="newAdminName">Full Name</Label>
+              <Input
+                id="newAdminName"
+                placeholder="e.g., Ahmed Hassan"
+                className="h-11"
+                {...registerAdmin("fullName")}
+              />
+              {adminErrors.fullName && (
+                <p className="text-xs text-destructive">{adminErrors.fullName.message}</p>
+              )}
+            </div>
+
+            {/* Email */}
+            <div className="space-y-2">
+              <Label htmlFor="newAdminEmail">Email Address</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="newAdminEmail"
+                  type="email"
+                  placeholder="admin@maman.com"
+                  className="pl-9 h-11"
+                  {...registerAdmin("email")}
+                />
+              </div>
+              {adminErrors.email && (
+                <p className="text-xs text-destructive">{adminErrors.email.message}</p>
+              )}
+            </div>
+
+            {/* Password */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="newAdminPassword">Password</Label>
+                <button
+                  type="button"
+                  onClick={handleGeneratePassword}
+                  className="text-xs text-primary hover:underline flex items-center gap-1"
+                >
+                  <Key className="h-3 w-3" />Generate
+                </button>
+              </div>
+              <div className="relative">
+                <Input
+                  id="newAdminPassword"
+                  type={showNewPassword ? "text" : "password"}
+                  placeholder="Strong password"
+                  className="pr-20 h-11"
+                  {...registerAdmin("password")}
+                />
+                <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+                  {newAdminPassword && (
+                    <button
+                      type="button"
+                      onClick={handleCopyPassword}
+                      className="p-1.5 text-muted-foreground hover:text-foreground rounded"
+                      title="Copy password"
+                    >
+                      {copiedPassword
+                        ? <Check className="h-3.5 w-3.5 text-green-500" />
+                        : <Copy className="h-3.5 w-3.5" />}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(v => !v)}
+                    className="p-1.5 text-muted-foreground hover:text-foreground rounded"
+                  >
+                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              {adminErrors.password && (
+                <p className="text-xs text-destructive">{adminErrors.password.message}</p>
+              )}
+            </div>
+
+            {/* Confirm password */}
+            <div className="space-y-2">
+              <Label htmlFor="newAdminConfirm">Confirm Password</Label>
+              <div className="relative">
+                <Input
+                  id="newAdminConfirm"
+                  type={showNewConfirm ? "text" : "password"}
+                  placeholder="Confirm the password"
+                  className="pr-10 h-11"
+                  {...registerAdmin("confirmPassword")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewConfirm(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showNewConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {adminErrors.confirmPassword && (
+                <p className="text-xs text-destructive">{adminErrors.confirmPassword.message}</p>
+              )}
+            </div>
+
+            <DialogFooter className="pt-2">
+              <Button type="button" variant="outline" onClick={handleCloseCreateAdmin} disabled={isCreatingAdmin}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isCreatingAdmin}>
+                {isCreatingAdmin
+                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating…</>
+                  : <><UserPlus className="mr-2 h-4 w-4" />Create Admin</>}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── 2FA Setup Dialog ── */}
+<Dialog open={show2FADialog} onOpenChange={(open) => { if (!open) { setShow2FADialog(false); setTwoFACode(""); } }}>
+  <DialogContent className="sm:max-w-md">
+    <DialogHeader>
+      <DialogTitle className="flex items-center gap-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+          <Lock className="h-4 w-4 text-primary" />
+        </div>
+        Enable Two-Factor Authentication
+      </DialogTitle>
+      <DialogDescription>
+        Scan the QR code with Google Authenticator or Authy, then enter the 6-digit code to confirm.
+      </DialogDescription>
+    </DialogHeader>
+
+    <div className="space-y-6 py-2">
+      {/* QR Code */}
+      <div className="flex flex-col items-center gap-3">
+        <div className="p-4 bg-white rounded-xl border">
+          <QRCode value={twoFAQrUri} size={160} />
+        </div>
+
+        {/* Manual entry fallback */}
+        <details className="w-full text-sm">
+          <summary className="cursor-pointer text-muted-foreground text-center hover:text-foreground transition-colors">
+            Can't scan? Enter manually
+          </summary>
+          <div className="mt-2 p-3 bg-muted rounded-lg">
+            <p className="text-xs text-muted-foreground mb-1">Secret key:</p>
+            <code className="text-xs break-all font-mono">{twoFASecret}</code>
+          </div>
+        </details>
+      </div>
+
+      {/* Code input */}
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-center">Enter the 6-digit code from your app:</p>
+        <div className="flex gap-2 justify-center">
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <input
+              key={idx}
+              type="text"
+              inputMode="numeric"
+              maxLength={1}
+              value={twoFACode[idx] || ""}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, "");
+                const digits = twoFACode.split("");
+                digits[idx] = val;
+                const next = digits.join("").slice(0, 6);
+                setTwoFACode(next);
+                if (val && idx < 5) {
+                  (e.target.nextElementSibling as HTMLInputElement)?.focus();
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Backspace" && !twoFACode[idx] && idx > 0) {
+                  (e.currentTarget.previousElementSibling as HTMLInputElement)?.focus();
+                }
+              }}
+              onPaste={(e) => {
+                e.preventDefault();
+                const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+                setTwoFACode(pasted);
+              }}
+              className={`w-10 h-12 text-center text-lg font-bold rounded-lg border-2 bg-background outline-none transition-all
+                focus:border-primary focus:ring-2 focus:ring-primary/20
+                ${twoFACode[idx] ? "border-primary text-primary" : "border-border"}`}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <DialogFooter>
+      <Button variant="outline" onClick={() => { setShow2FADialog(false); setTwoFACode(""); }} disabled={isConfirming2FA}>
+        Cancel
+      </Button>
+      <Button onClick={handleConfirm2FA} disabled={isConfirming2FA || twoFACode.length !== 6}>
+        {isConfirming2FA
+          ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Verifying…</>
+          : <><Lock className="mr-2 h-4 w-4" />Activate 2FA</>}
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
+{/* ── 2FA Disable Dialog ── */}
+<Dialog open={show2FADisableDialog} onOpenChange={(open) => { if (!open) { setShow2FADisableDialog(false); setDisableCode(""); } }}>
+  <DialogContent className="sm:max-w-sm">
+    <DialogHeader>
+      <DialogTitle className="flex items-center gap-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/10">
+          <AlertTriangle className="h-4 w-4 text-destructive" />
+        </div>
+        Disable Two-Factor Authentication
+      </DialogTitle>
+      <DialogDescription>
+        Enter your current authenticator code to confirm. This will remove 2FA protection from your account.
+      </DialogDescription>
+    </DialogHeader>
+
+    <div className="space-y-4 py-2">
+      <div className="flex gap-2 justify-center">
+        {Array.from({ length: 6 }).map((_, idx) => (
+          <input
+            key={idx}
+            type="text"
+            inputMode="numeric"
+            maxLength={1}
+            value={disableCode[idx] || ""}
+            onChange={(e) => {
+              const val = e.target.value.replace(/\D/g, "");
+              const digits = disableCode.split("");
+              digits[idx] = val;
+              const next = digits.join("").slice(0, 6);
+              setDisableCode(next);
+              if (val && idx < 5) {
+                (e.target.nextElementSibling as HTMLInputElement)?.focus();
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Backspace" && !disableCode[idx] && idx > 0) {
+                (e.currentTarget.previousElementSibling as HTMLInputElement)?.focus();
+              }
+            }}
+            onPaste={(e) => {
+              e.preventDefault();
+              const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+              setDisableCode(pasted);
+            }}
+            className={`w-10 h-12 text-center text-lg font-bold rounded-lg border-2 bg-background outline-none transition-all
+              focus:border-destructive focus:ring-2 focus:ring-destructive/20
+              ${disableCode[idx] ? "border-destructive text-destructive" : "border-border"}`}
+          />
+        ))}
+      </div>
+    </div>
+
+    <DialogFooter>
+      <Button variant="outline" onClick={() => { setShow2FADisableDialog(false); setDisableCode(""); }} disabled={isDisabling2FA}>
+        Cancel
+      </Button>
+      <Button variant="destructive" onClick={handleDisable2FA} disabled={isDisabling2FA || disableCode.length !== 6}>
+        {isDisabling2FA
+          ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Disabling…</>
+          : "Disable 2FA"}
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
     </DashboardLayout>
   );
 }
