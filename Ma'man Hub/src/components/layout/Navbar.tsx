@@ -1,28 +1,23 @@
-import { ReactNode, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
-interface MainLayoutProps {
-  children: ReactNode;
-}
 import {
   BookOpen,
   Layers,
   User,
+  Menu,
   X,
+  Search,
   Calendar,
   Trophy,
+  Bell,
+  GraduationCap,
   LayoutDashboard,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/authStore";
-
-interface MainLayoutProps {
-  children: ReactNode;
-}
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -33,9 +28,8 @@ const navigation = [
   { name: "Leaderboard", href: "/leaderboard", icon: Trophy },
 ];
 
-export function MainLayout({ children }: MainLayoutProps) {
+export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
@@ -45,17 +39,68 @@ export function MainLayout({ children }: MainLayoutProps) {
     navigate("/login");
   };
 
-  const getInitials = () => {
-    if (!user?.email) return "U";
-    return user.email.substring(0, 2).toUpperCase();
-  };
-
   return (
-    <div className="min-h-screen bg-background">
-      {/* Navbar */}
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <main className="pt-16">{children}</main>
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b">
+      <div className="container mx-auto px-6">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
+              <GraduationCap className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <span className="hidden font-display text-xl font-bold sm:inline-block">
+              EduPlatform
+            </span>
+          </Link>
+
+          {/* Center Links */}
+          <div className="hidden md:flex items-center gap-6 text-gray-600">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                to={item.href}
+                className="flex items-center gap-2 hover:text-black"
+              >
+                <item.icon className="w-4 h-4" />
+                {item.name}
+              </Link>
+            ))}
+          </div>
+
+          {/* Right Side */}
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon">
+              <Search className="w-5 h-5" />
+            </Button>
+
+            <div className="relative">
+              <Button variant="ghost" size="icon">
+                <Bell className="w-5 h-5" />
+              </Button>
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                3
+              </span>
+            </div>
+
+            <div className="hidden md:flex items-center gap-2">
+              <Link to="/login">
+                <Button variant="ghost">Log in</Button>
+              </Link>
+              <Link to="/register">
+                <Button>Sign up</Button>
+              </Link>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setMobileMenuOpen(true)}
+            >
+              <Menu className="w-6 h-6" />
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Mobile Menu */}
@@ -69,7 +114,6 @@ export function MainLayout({ children }: MainLayoutProps) {
           >
             <div className="flex justify-between mb-6">
               <h2 className="font-bold text-lg">Menu</h2>
-
               <X
                 className="cursor-pointer"
                 onClick={() => setMobileMenuOpen(false)}
@@ -110,7 +154,6 @@ export function MainLayout({ children }: MainLayoutProps) {
                   >
                     Login
                   </Button>
-
                   <Button className="w-full" onClick={() => navigate("/auth")}>
                     Register
                   </Button>
@@ -120,14 +163,6 @@ export function MainLayout({ children }: MainLayoutProps) {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Content */}
-      {/* <main className="pt-16">{children}</main> */}
-
-      {/* Footer */}
-      <div className="mt-16 border-t border-background/10 pt-8 text-center text-sm text-muted-foreground">
-        <Footer />
-      </div>
-    </div>
+    </nav>
   );
 }
