@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./ProtectedRoute.tsx";
+import UnauthorizedPage from "./pages/UnauthorizedPage";
 
 // Auth Pages
 import LoginPage from "./pages/auth/LoginPage";
@@ -50,6 +51,11 @@ import OrderConfirmationPage from "./pages/checkout/OrderConfirmationPage";
 
 // Course Pages
 import CoursesCatalogPage from "./pages/courses/CoursesCatalogPage";
+// import AgeGroupsPage from "./pages/courses/AgeGroupsPage";
+import Categoriespage from "./pages/courses/Categoriespage";
+import WishlistPage from "./pages/courses/Wishlistpage.tsx";
+
+
 import CourseDetailPage from "./pages/courses/CourseDetailPage";
 import CoursePlayerPage from "./pages/courses/CoursePlayerPage";
 
@@ -74,7 +80,7 @@ const SPECIALIST        = ["Specialist", "Admin"]                               
 const PARENT            = ["Parent", "Admin"]                                               as const;
 const STUDENT_FAMILY    = ["Student", "Parent", "Admin"]                                    as const;
 const ALL_AUTHENTICATED = ["Student", "Parent", "Specialist", "ContentCreator", "Admin"]    as const;
-const BUYERS            = ["Student", "Parent", "Admin"]                                    as const;
+const BUYERS = ["Student", "Parent", "Admin", "ContentCreator", "Specialist"]               as const;
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -86,10 +92,12 @@ const App = () => (
 
           {/* ── Public ───────────────────────────────────────────────────────── */}
           <Route path="/"                  element={<Index />} />
+          {/* <Route path="/age-groups" element={<AgeGroupsPage />} /> */}
+          <Route path="/categories" element={<Categoriespage />} />
           <Route path="/courses"           element={<CoursesCatalogPage />} />
           <Route path="/courses/:courseId" element={<CourseDetailPage />} />
           <Route path="/profile/:userId"   element={<PublicProfilePage />} />
-
+          <Route path="/unauthorized" element={<UnauthorizedPage />} /> 
           {/* ── Auth (no protection needed) ──────────────────────────────────── */}
           <Route path="/login"                element={<LoginPage />} />
           <Route path="/register"             element={<RegisterPage />} />
@@ -121,16 +129,21 @@ const App = () => (
           />
 
           {/* ── Creator ──────────────────────────────────────────────────────── */}
-          <Route path="/creator"
+          <Route path="/content-creator"
             element={<ProtectedRoute allowedRoles={[...CREATOR]} element={<CreatorDashboardPage />} />}
           />
-          <Route path="/content-creator/profile"
+
+          <Route path="/contentCreator/dashboard"
+            element={<ProtectedRoute allowedRoles={[...CREATOR]} element={<CreatorDashboardPage />} />}
+          />
+
+          <Route path="/ContentCreator/profile"
             element={<ProtectedRoute allowedRoles={[...CREATOR]} element={<CreatorProfilePage />} />}
           />
-          <Route path="/creator/upload"
+          <Route path="/content-creator/upload"
             element={<ProtectedRoute allowedRoles={[...CREATOR]} element={<UploadVideoPage />} />}
           />
-          <Route path="/creator/go-live"
+          <Route path="/content-creator/go-live"
             element={<ProtectedRoute allowedRoles={[...CREATOR]} element={<GoLivePage />} />}
           />
 
@@ -189,6 +202,11 @@ const App = () => (
           />
 
           {/* ── Cart & Checkout ───────────────────────────────────────────────── */}
+
+               <Route path="/wishlist"
+            element={<ProtectedRoute allowedRoles={[...BUYERS]} element={<WishlistPage />} />}
+          />
+
           <Route path="/cart"
             element={<ProtectedRoute allowedRoles={[...BUYERS]} element={<CartPage />} />}
           />

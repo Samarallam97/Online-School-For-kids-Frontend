@@ -70,13 +70,13 @@ export default function AuthCallbackPage() {
             title: "Welcome back!",
             description: `Signed in as ${userData.fullName}`,
           });
-          navigate(`/${rolePath}/dashboard`);
+          navigate(`/`);
         }
       })
       .catch(() => {
         // Tokens are saved; fall back to a safe default
         toast({ title: "Welcome!", description: "You're now signed in." });
-        navigate("/dashboard");
+        navigate("/");
       });
 
   // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,12 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Mail, Phone, MapPin, Camera, Users, Star, Briefcase,
-  Plus, X, Save, Loader2,
-  MessageSquare, 
+  Plus, X, Save, Loader2, MessageSquare,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { userService, ProfileDto } from "@/services/userService";
-import { specialistService} from "@/services/specialistService";
 import { NotificationsTab } from "@/components/profile/NotificationsTab";
 import { BillingTab } from "@/components/profile/parent/BillingTab";
 import { ExperienceTab } from "@/components/profile/creator/ExperienceTab";
@@ -59,8 +57,7 @@ export default function SpecialistProfilePage() {
       } catch { toast({ title: "Error", description: "Failed to load profile", variant: "destructive" }); }
       finally { setIsLoading(false); }
     };
-   
-    load(); 
+    load();
   }, []);
 
   const getInitials = () => {
@@ -113,14 +110,27 @@ export default function SpecialistProfilePage() {
 
   const addTag = () => { const t = newTag.trim(); if (t && !expertiseTags.includes(t)) setExpertiseTags([...expertiseTags, t]); setNewTag(""); };
 
-  if (isLoading) return <DashboardLayout><div className="flex h-[400px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></DashboardLayout>;
-  if (!userData) return <DashboardLayout><div className="flex h-[400px] items-center justify-center"><p className="text-muted-foreground">Failed to load profile</p></div></DashboardLayout>;
+  if (isLoading) return (
+    <MainLayout>
+      <div className="flex h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    </MainLayout>
+  );
+
+  if (!userData) return (
+    <MainLayout>
+      <div className="flex h-[400px] items-center justify-center">
+        <p className="text-muted-foreground">Failed to load profile</p>
+      </div>
+    </MainLayout>
+  );
 
   return (
-    <DashboardLayout>
-      <div className="mx-auto max-w-4xl space-y-6">
+    <MainLayout>
+      <div className="mx-auto max-w-6xl space-y-6 p-4 lg:p-6">
 
-        {/* ── Header Card ── */}
+        {/* Header Card */}
         <Card>
           <CardContent className="pt-6">
             <div className="flex flex-col items-center gap-6 sm:flex-row">
@@ -155,7 +165,6 @@ export default function SpecialistProfilePage() {
         </Card>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          {/* 9 tabs: added "payouts" */}
           <TabsList className="grid w-full grid-cols-4 md:grid-cols-9">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="availability">Available Slots</TabsTrigger>
@@ -168,7 +177,6 @@ export default function SpecialistProfilePage() {
             <TabsTrigger value="billing">Billing</TabsTrigger>
           </TabsList>
 
-          {/* ── Profile ── */}
           <TabsContent value="profile" className="space-y-6">
             <Card>
               <CardHeader>
@@ -246,6 +254,6 @@ export default function SpecialistProfilePage() {
           <TabsContent value="billing"><BillingTab /></TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
+    </MainLayout>
   );
 }

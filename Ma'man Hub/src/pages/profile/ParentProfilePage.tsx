@@ -1,25 +1,14 @@
 import { useState, useEffect, useRef } from "react";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Camera,
-  Users,
-  BookOpen,
-  Trophy,
-  Clock,
-  Loader2,
-} from "lucide-react";
+import { Camera, Users, BookOpen, Trophy, Clock, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { userService, ProfileDto } from "@/services/userService";
 
-// Import sub-components
 import { PersonalInfoTab } from "@/components/profile/parent/PersonalInfoTab";
 import { ChildrenManagementTab } from "@/components/profile/parent/ChildrenManagementTab";
 import { NotificationsTab } from "@/components/profile/NotificationsTab";
@@ -43,14 +32,8 @@ export default function ParentProfilePage() {
         const data = await userService.getProfile();
         setUserData(data);
       } catch (error: any) {
-        toast({
-          title: "Error",
-          description: error.response?.data?.message || "Failed to load profile",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
+        toast({ title: "Error", description: error.response?.data?.message || "Failed to load profile", variant: "destructive" });
+      } finally { setIsLoading(false); }
     };
     fetchProfile();
   }, [toast]);
@@ -58,18 +41,12 @@ export default function ParentProfilePage() {
   const handleProfilePictureChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      toast({ title: "Invalid File", description: "Please select an image file", variant: "destructive" });
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast({ title: "File Too Large", description: "Please select an image smaller than 5MB", variant: "destructive" });
-      return;
-    }
+    if (!file.type.startsWith("image/")) { toast({ title: "Invalid File", description: "Please select an image file", variant: "destructive" }); return; }
+    if (file.size > 5 * 1024 * 1024) { toast({ title: "File Too Large", description: "Please select an image smaller than 5MB", variant: "destructive" }); return; }
     try {
       setIsUploadingImage(true);
       const formData = new FormData();
-      formData.append('profilePicture', file);
+      formData.append("profilePicture", file);
       const response = await userService.uploadProfilePicture(formData);
       setUserData(prev => prev ? { ...prev, profilePictureUrl: response.profilePictureUrl } : null);
       toast({ title: "Success", description: "Profile picture updated successfully" });
@@ -77,7 +54,7 @@ export default function ParentProfilePage() {
       toast({ title: "Error", description: error.response?.data?.message || "Failed to upload profile picture", variant: "destructive" });
     } finally {
       setIsUploadingImage(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -88,29 +65,26 @@ export default function ParentProfilePage() {
     return userData.fullName.charAt(0);
   };
 
-  if (isLoading) {
-    return (
-      <DashboardLayout>
-        <div className="flex h-[400px] items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </DashboardLayout>
-    );
-  }
+  if (isLoading) return (
+    <MainLayout>
+      <div className="flex h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    </MainLayout>
+  );
 
-  if (!userData) {
-    return (
-      <DashboardLayout>
-        <div className="flex h-[400px] items-center justify-center">
-          <p className="text-muted-foreground">Failed to load profile</p>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  if (!userData) return (
+    <MainLayout>
+      <div className="flex h-[400px] items-center justify-center">
+        <p className="text-muted-foreground">Failed to load profile</p>
+      </div>
+    </MainLayout>
+  );
 
   return (
-    <DashboardLayout>
-      <div className="mx-auto max-w-4xl space-y-6">
+    <MainLayout>
+      <div className="mx-auto max-w-6xl space-y-6 p-4 lg:p-6">
+
         {/* Profile Header */}
         <Card>
           <CardContent className="pt-6">
@@ -150,36 +124,15 @@ export default function ParentProfilePage() {
             <TabsTrigger value="billing">Billing</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="profile">
-            <PersonalInfoTab userData={userData} setUserData={setUserData} isActive={activeTab === "profile"} />
-          </TabsContent>
-
-          <TabsContent value="courses">
-            <CoursesTab />
-          </TabsContent>
-
-          <TabsContent value="achievements">
-            <AchievementsTab />
-          </TabsContent>
-
-          <TabsContent value="children">
-            <ChildrenManagementTab />
-          </TabsContent>
-
-          {/* ── Notifications — unified component ── */}
-          <TabsContent value="notifications">
-            <NotificationsTab role="parent" />
-          </TabsContent>
-
-          <TabsContent value="social">
-            <SocialLinksTab />
-          </TabsContent>
-
-          <TabsContent value="billing">
-            <BillingTab />
-          </TabsContent>
+          <TabsContent value="profile"><PersonalInfoTab userData={userData} setUserData={setUserData} isActive={activeTab === "profile"} /></TabsContent>
+          <TabsContent value="courses"><CoursesTab /></TabsContent>
+          <TabsContent value="achievements"><AchievementsTab /></TabsContent>
+          <TabsContent value="children"><ChildrenManagementTab /></TabsContent>
+          <TabsContent value="notifications"><NotificationsTab role="parent" /></TabsContent>
+          <TabsContent value="social"><SocialLinksTab /></TabsContent>
+          <TabsContent value="billing"><BillingTab /></TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
+    </MainLayout>
   );
 }

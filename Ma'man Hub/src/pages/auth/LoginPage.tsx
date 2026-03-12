@@ -57,15 +57,12 @@ function OtpInput({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>, idx: number) => {
     const raw = e.target.value.replace(/\D/g, "");
     if (!raw) return;
-
-    // Handle paste of full code
     if (raw.length > 1) {
       const pasted = raw.slice(0, 6);
       onChange(pasted);
       inputsRef.current[Math.min(pasted.length, 5)]?.focus();
       return;
     }
-
     const newDigits = [...digits];
     newDigits[idx] = raw[0];
     onChange(newDigits.join("").replace(/ /g, ""));
@@ -133,6 +130,26 @@ export default function LoginPage() {
 
   const rememberMe = watch("rememberMe");
 
+  // ── Redirect if already authenticated ────────────────────────────────────
+  useEffect(() => {
+    try {
+      const raw   = localStorage.getItem("user");
+      const token = localStorage.getItem("access_token");
+      if (raw && token) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.id) {
+          navigate("/", { replace: true });
+        }
+      }
+    } catch {
+      // Corrupted data — clear and stay on login
+      localStorage.removeItem("user");
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+    }
+  }, [navigate]);
+
+  // ── Pre-fill email from URL / session / local storage ────────────────────
   useEffect(() => {
     const getEmailFromSources = (): string => {
       const emailFromUrl = searchParams.get("email");
@@ -158,7 +175,6 @@ export default function LoginPage() {
         rememberMe: data.rememberMe,
       });
 
-      // Admin with 2FA enabled → go to OTP step
       if (authData.requires2FA && authData.tempToken) {
         setTempToken(authData.tempToken);
         setStep("2fa");
@@ -182,10 +198,7 @@ export default function LoginPage() {
     }
     setIsLoading(true);
     try {
-      const authData = await authService.verify2FA({
-        tempToken,
-        code: otpCode,
-      });
+      const authData = await authService.verify2FA({ tempToken, code: otpCode });
       handleLoginSuccess(authData);
     } catch (error: any) {
       handleLoginError(error);
@@ -199,7 +212,10 @@ export default function LoginPage() {
 
   const handleLoginSuccess = (authData: any) => {
     const userData = authData.user;
-    localStorage.setItem("user", JSON.stringify(userData));
+
+    localStorage.setItem("user",          JSON.stringify(userData));
+    localStorage.setItem("access_token",  authData.accessToken  ?? authData.access_token  ?? "");
+    localStorage.setItem("refresh_token", authData.refreshToken ?? authData.refresh_token ?? "");
 
     const rolePathMap: Record<string, string> = {
       Student: "student", student: "student",
@@ -209,8 +225,8 @@ export default function LoginPage() {
       Admin: "admin", admin: "admin",
     };
 
-    const rolePath = rolePathMap[userData.role] || "student";
-    const redirectPath = userData.isFirstLogin ? `/${rolePath}/profile` : `/${rolePath}/dashboard`;
+    const rolePath     = rolePathMap[userData.role] || "student";
+    const redirectPath = userData.isFirstLogin ? `/${rolePath}/profile` : "/";
 
     toast({
       title: userData.isFirstLogin ? "Welcome to Ma'man!" : "Welcome back!",
@@ -219,7 +235,7 @@ export default function LoginPage() {
         : `Logged in as ${userData.fullName}`,
     });
 
-    navigate(redirectPath);
+    navigate(redirectPath, { replace: true });
   };
 
   const handleLoginError = (error: any) => {
@@ -337,7 +353,6 @@ export default function LoginPage() {
                 transition={{ duration: 0.3 }}
                 className="space-y-8"
               >
-                {/* Back button */}
                 <button
                   onClick={() => { setStep("credentials"); setOtpCode(""); setTempToken(""); }}
                   className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -346,7 +361,6 @@ export default function LoginPage() {
                   Back to login
                 </button>
 
-                {/* Icon + Header */}
                 <div className="text-center space-y-4">
                   <motion.div
                     initial={{ scale: 0.8, opacity: 0 }}
@@ -364,27 +378,18 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                {/* OTP Input */}
                 <div className="space-y-3">
                   <OtpInput value={otpCode} onChange={setOtpCode} disabled={isLoading} />
-                  <p className="text-center text-xs text-muted-foreground">
-                    Code refreshes every 30 seconds
-                  </p>
+                  <p className="text-center text-xs text-muted-foreground">Code refreshes every 30 seconds</p>
                 </div>
 
-                {/* Submit */}
-                <Button
-                  className="w-full h-12"
-                  disabled={isLoading || otpCode.length !== 6}
-                  onClick={onSubmit2FA}
-                >
+                <Button className="w-full h-12" disabled={isLoading || otpCode.length !== 6} onClick={onSubmit2FA}>
                   {isLoading
                     ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Verifying...</>
                     : "Verify & Sign in"
                   }
                 </Button>
 
-                {/* Helper text */}
                 <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground space-y-1">
                   <p className="font-medium text-foreground">Can't access your authenticator?</p>
                   <p>Contact your system administrator to reset your 2FA settings.</p>
@@ -396,7 +401,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right Panel - Decorative */}
+      {/* Right Panel */}
       <div className="hidden lg:flex lg:flex-1 gradient-hero items-center justify-center p-12">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
