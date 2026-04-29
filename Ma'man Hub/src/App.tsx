@@ -111,9 +111,6 @@ const App = () => (
               />
             }
           />
-          <Route path="/admin/users/:userId"
-            element={<ProtectedRoute allowedRoles={[...ADMIN]} element={<AdminUserDetailPage />} />}
-          />
           <Route
             path="/admin/users"
             element={
