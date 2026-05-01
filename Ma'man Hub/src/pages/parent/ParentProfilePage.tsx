@@ -1,35 +1,29 @@
 import { useState, useEffect, useRef } from "react";
-import { MainLayout } from "@/components/layout/MainLayout";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Camera, BookOpen, Trophy, Clock, Loader2, MessageSquare } from "lucide-react";
+import { Camera, Users, BookOpen, Trophy, Clock, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { userService, ProfileDto } from "@/services/userService";
-import { Link, useLocation } from "react-router-dom";
-import { ShareProfileDialog } from "@/components/profile/ShareProfileDialog";
 
-import { PersonalInfoTab } from "@/components/profile/student/StudentPersonalInfoTab";
-import { CoursesTab } from "@/components/profile/parent/CoursesTab";
-import { AchievementsTab } from "@/components/profile/parent/AchievementsTab";
+import { PersonalInfoTab } from "@/components/profile/parent/PersonalInfoTab";
+import { ChildrenManagementTab } from "@/components/profile/parent/ChildrenManagementTab";
 import { NotificationsTab } from "@/components/profile/NotificationsTab";
 import { BillingTab } from "@/components/profile/parent/BillingTab";
-import { ParentLinkCard } from "@/components/profile/student/ParentLinkCard";
+import { CoursesTab } from "@/components/profile/parent/CoursesTab";
+import { AchievementsTab } from "@/components/profile/parent/AchievementsTab";
 import { SocialLinksTab } from "@/components/profile/creator/SocialLinksTab";
 
-export default function StudentProfilePage() {
+export default function ParentProfilePage() {
   const { toast } = useToast();
-  const location = useLocation();
   const [userData, setUserData] = useState<ProfileDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentTab, setCurrentTab] = useState("profile");
+  const [activeTab, setActiveTab] = useState("profile");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const showParentLinked = location.state?.showParentLinked || false;
-  const parentName = location.state?.parentName;
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -72,23 +66,23 @@ export default function StudentProfilePage() {
   };
 
   if (isLoading) return (
-    <MainLayout>
+    <DashboardLayout>
       <div className="flex h-[400px] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
-    </MainLayout>
+    </DashboardLayout>
   );
 
   if (!userData) return (
-    <MainLayout>
+    <DashboardLayout>
       <div className="flex h-[400px] items-center justify-center">
         <p className="text-muted-foreground">Failed to load profile</p>
       </div>
-    </MainLayout>
+    </DashboardLayout>
   );
 
   return (
-    <MainLayout>
+    <DashboardLayout>
       <div className="mx-auto max-w-6xl space-y-6 p-4 lg:p-6">
 
         {/* Profile Header */}
@@ -107,41 +101,38 @@ export default function StudentProfilePage() {
               </div>
               <div className="flex-1 text-center sm:text-left">
                 <h1 className="text-2xl font-bold">{userData.fullName}</h1>
-                <p className="text-muted-foreground capitalize">{userData.role || "Student"}</p>
+                <p className="text-muted-foreground">Parent Account</p>
                 <div className="mt-2 flex flex-wrap justify-center gap-2 sm:justify-start">
+                  <Badge variant="secondary"><Users className="mr-1 h-3 w-3" />{userData.childrenCount || 0} Children</Badge>
                   <Badge variant="secondary"><BookOpen className="mr-1 h-3 w-3" />{userData.enrolledCourses || 0} Courses</Badge>
                   <Badge variant="secondary"><Trophy className="mr-1 h-3 w-3" />{userData.achievements || 0} Achievements</Badge>
                   <Badge variant="secondary"><Clock className="mr-1 h-3 w-3" />{userData.totalHoursLearned || 0} Hours Learned</Badge>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <Link to="/messages"><Button variant="outline" size="icon"><MessageSquare className="h-4 w-4" /></Button></Link>
-                <ShareProfileDialog userId={userData.id} userName={userData.fullName} />
-              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Tabs value={currentTab} onValueChange={setCurrentTab} className="space-y-6">
+        <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="parent">Parent</TabsTrigger>
             <TabsTrigger value="courses">My Courses</TabsTrigger>
             <TabsTrigger value="achievements">Achievements</TabsTrigger>
+            <TabsTrigger value="children">Children</TabsTrigger>
             <TabsTrigger value="social">Social Links</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="billing">Billing</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="profile"><PersonalInfoTab userData={userData} setUserData={setUserData} isActive={currentTab === "profile"} /></TabsContent>
-          <TabsContent value="parent"><ParentLinkCard showSuccessMessage={showParentLinked} parentNameFromInvite={parentName} /></TabsContent>
+          <TabsContent value="profile"><PersonalInfoTab userData={userData} setUserData={setUserData} isActive={activeTab === "profile"} /></TabsContent>
           <TabsContent value="courses"><CoursesTab /></TabsContent>
           <TabsContent value="achievements"><AchievementsTab /></TabsContent>
+          <TabsContent value="children"><ChildrenManagementTab /></TabsContent>
+          <TabsContent value="notifications"><NotificationsTab role="parent" /></TabsContent>
           <TabsContent value="social"><SocialLinksTab /></TabsContent>
-          <TabsContent value="notifications"><NotificationsTab role="student" /></TabsContent>
           <TabsContent value="billing"><BillingTab /></TabsContent>
         </Tabs>
       </div>
-    </MainLayout>
+    </DashboardLayout>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { MainLayout } from "@/components/layout/MainLayout";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -162,7 +162,7 @@ export default function CreatorProfilePage() {
   );
 
   return (
-    <MainLayout>
+    <DashboardLayout>
     <div className="mx-auto max-w-6xl space-y-6 p-4 lg:p-6">
 
       {/* Profile Header */}
@@ -296,6 +296,6 @@ export default function CreatorProfilePage() {
         <TabsContent value="payment"><BillingTab /></TabsContent>
       </Tabs>
     </div>
-    </MainLayout>
+    </DashboardLayout>
   );
 }

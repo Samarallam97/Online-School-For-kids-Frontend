@@ -31,9 +31,9 @@ import {
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useCartStore } from "@/stores/cartStore";
 import {
-  contentService, AgeGroup,
+  courseService, AgeGroup,
   AGE_GROUPS, getAgeGroupMeta,
-} from "@/services/contentService";
+} from "@/services/courseService";
 import api from "@/services/api";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -357,7 +357,7 @@ export default function CoursesCatalogPage() {
       if (sort === "price-low")  { backendSortBy = "price"; sortOrder = "asc"; }
       if (sort === "price-high") { backendSortBy = "price"; sortOrder = "desc"; }
 
-      const result = await contentService.getCourses({
+      const result = await courseService.getCourses({
         searchQuery: search || undefined,
         minPrice:    price[0] > 0   ? price[0]  : undefined,
         maxPrice:    price[1] < 200 ? price[1]  : undefined,

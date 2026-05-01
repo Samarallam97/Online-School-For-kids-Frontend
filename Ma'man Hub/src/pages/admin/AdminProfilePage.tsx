@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { MainLayout } from "@/components/layout/MainLayout";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import {
   Card, CardContent, CardHeader, CardTitle, CardDescription,
 } from "@/components/ui/card";
@@ -387,23 +387,23 @@ export default function AdminProfilePage() {
   };
 
   if (isLoading) return (
-    <MainLayout>
+    <DashboardLayout>
       <div className="flex h-[400px] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
-    </MainLayout>
+    </DashboardLayout>
   );
 
   if (!userData) return (
-    <MainLayout>
+    <DashboardLayout>
       <div className="flex h-[400px] items-center justify-center">
         <p className="text-muted-foreground">Failed to load profile</p>
       </div>
-    </MainLayout>
+    </DashboardLayout>
   );
 
   return (
-    <MainLayout>
+    <DashboardLayout>
       <div className="mx-auto max-w-6xl space-y-6 p-4 lg:p-6">
 
         {/* Header card */}
@@ -742,6 +742,6 @@ export default function AdminProfilePage() {
         </DialogContent>
       </Dialog>
 
-    </MainLayout>
+    </DashboardLayout>
   );
 }

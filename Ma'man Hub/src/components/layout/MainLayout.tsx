@@ -25,12 +25,11 @@ interface MainLayoutProps {
 }
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Courses", href: "/courses", icon: BookOpen },
-  { name: "Modules", href: "/modules", icon: Layers },
+  { name: "Categories", href: "/categories", icon: BookOpen },
+  { name: "Specialists", href: "/specialists", icon: Layers },
   { name: "Instructors", href: "/instructors", icon: User },
-  { name: "Calendar", href: "/calendar", icon: Calendar },
   { name: "Leaderboard", href: "/leaderboard", icon: Trophy },
+  { name: "Feeds", href: "/feeds", icon: Calendar },
 ];
 
 export function MainLayout({ children }: MainLayoutProps) {

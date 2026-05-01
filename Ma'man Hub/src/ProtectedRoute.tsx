@@ -51,11 +51,11 @@ export default ProtectedRoute;
 
 export function roleHome(role: UserRole): string {
   switch (role) {
-    case "Admin":          return "/admin";
-    case "ContentCreator": return "/contentCreator/dashboard";
-    case "Parent":         return "/parent";
-    case "Student":        return "/dashboard";
-    case "Specialist":     return "/specialist/profile";
+    case "Admin":          return "/admin/dashboard";
+    case "ContentCreator": return "/ContentCreator/dashboard";
+    case "Parent":         return "/parent/dashboard";
+    case "Student":        return "/student/dashboard";
+    case "Specialist":     return "/specialist/dashboard";
     default:               return "/";
   }
 }
