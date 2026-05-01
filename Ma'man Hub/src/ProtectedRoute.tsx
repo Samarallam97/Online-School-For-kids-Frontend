@@ -1,6 +1,5 @@
 import { Navigate, useLocation } from "react-router-dom";
 
-
 export type UserRole =
   | "Admin"
   | "ContentCreator"
@@ -16,7 +15,6 @@ interface StoredUser {
   profilePictureUrl: string | null;
 }
 
-
 function getStoredUser(): StoredUser | null {
   try {
     const raw = localStorage.getItem("user");
@@ -27,16 +25,12 @@ function getStoredUser(): StoredUser | null {
   }
 }
 
-
 interface ProtectedRouteProps {
   element: React.ReactElement;
   allowedRoles?: UserRole[];
 }
 
-const ProtectedRoute = ({
-  element,
-  allowedRoles = [],
-}: ProtectedRouteProps) => {
+const ProtectedRoute = ({ element, allowedRoles = [] }: ProtectedRouteProps) => {
   const location = useLocation();
   const user = getStoredUser();
 
@@ -45,9 +39,9 @@ const ProtectedRoute = ({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // 2. Role not permitted → redirect to role's home page
+  // 2. Role not permitted → show unauthorized page
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-    return <Navigate to={roleHome(user.role)} replace />;
+    return <Navigate to="/unauthorized" state={{ from: location }} replace />;
   }
 
   return element;
@@ -55,13 +49,12 @@ const ProtectedRoute = ({
 
 export default ProtectedRoute;
 
-
 export function roleHome(role: UserRole): string {
   switch (role) {
-    case "Admin":          return "/admin/profile";
-    case "ContentCreator": return "/creator/profile";
-    case "Parent":         return "/parent/profile";
-    case "Student":        return "/student/profile";
+    case "Admin":          return "/admin";
+    case "ContentCreator": return "/contentCreator/dashboard";
+    case "Parent":         return "/parent";
+    case "Student":        return "/dashboard";
     case "Specialist":     return "/specialist/profile";
     default:               return "/";
   }

@@ -24,142 +24,122 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { authService } from "@/services/authService";
 
-// import { useAuthStore } from "@/stores/authStore";
-
 interface DashboardLayoutProps {
   children: ReactNode;
 }
 
 const studentNavigation = [
-  { name: "Dashboard", href: "/student/dashboard", icon: Home },
-  { name: "My Courses", href: "/student/my-courses", icon: BookOpen },
-  { name: "Messages", href: "/student/messages", icon: MessageSquare },
-  { name: "Group Chats", href: "/student/groups", icon: Users },
+  { name: "Dashboard",    href: "/student/dashboard",    icon: Home },
+  { name: "My Courses",   href: "/student/my-courses",   icon: BookOpen },
+  // { name: "Messages",     href: "/student/messages",     icon: MessageSquare },
+  // { name: "Group Chats",  href: "/student/groups",       icon: Users },
   { name: "Achievements", href: "/student/achievements", icon: Trophy },
-  { name: "Profile", href: "/student/profile", icon: User },
-  { name: "Settings", href: "/student/settings", icon: Settings },
+  // { name: "Profile",      href: "/student/profile",      icon: User },
+  // { name: "Settings",     href: "/student/settings",     icon: Settings },
 ];
 
 const creatorNavigation = [
-  { name: "Dashboard", href: "/content-creator/dashboard", icon: Home },
-  { name: "Upload Video", href: "/content-creator/upload", icon: BarChart3 },
-  { name: "Go Live", href: "/content-creator/go-live", icon: BookOpen },
-  { name: "Messages", href: "/content-creator/messages", icon: MessageSquare },
-  { name: "Profile", href: "/content-creator/profile", icon: User },
-  { name: "Settings", href: "/content-creator/settings", icon: Settings },
+  { name: "Dashboard",    href: "/contentCreator/dashboard",  icon: Home },
+  { name: "My Courses",   href: "/content-creator//my-courses",   icon: BookOpen },
+  { name: "Upload Video", href: "/content-creator/upload",    icon: BarChart3 },
+  { name: "Go Live",      href: "/content-creator/go-live",   icon: BookOpen },
+
 ];
 
 const specialistNavigation = [
-  { name: "Dashboard", href: "/specialist/dashboard", icon: Home },
-  { name: "My Sessions", href: "/specialist/sessions", icon: BookOpen },
-  { name: "Messages", href: "/specialist/messages", icon: MessageSquare },
-  { name: "Profile", href: "/specialist/profile", icon: User },
-  { name: "Settings", href: "/specialist/settings", icon: Settings },
+  { name: "Dashboard",   href: "/specialist/dashboard", icon: Home },
+  { name: "My Sessions", href: "/specialist/sessions",  icon: BookOpen },
+  { name: "Messages",    href: "/specialist/messages",  icon: MessageSquare },
+  { name: "Profile",     href: "/specialist/profile",   icon: User },
+  { name: "Settings",    href: "/specialist/settings",  icon: Settings },
 ];
 
 const parentNavigation = [
-  { name: "Dashboard", href: "/parent/dashboard", icon: Home },
-  { name: "My Children", href: "/parent/children", icon: Users },
-  { name: "Messages", href: "/parent/messages", icon: MessageSquare },
-  { name: "Profile", href: "/parent/profile", icon: User },
-  { name: "Settings", href: "/parent/settings", icon: Settings },
+  { name: "Dashboard",   href: "/parent/dashboard", icon: Home },
+  { name: "My Children", href: "/parent/children",  icon: Users },
+  { name: "Messages",    href: "/parent/messages",  icon: MessageSquare },
+  { name: "Profile",     href: "/parent/profile",   icon: User },
+  { name: "Settings",    href: "/parent/settings",  icon: Settings },
 ];
 
 const adminNavigation = [
-  { name: "Dashboard", href: "/admin/dashboard", icon: Home },
-  { name: "Users", href: "/admin/users", icon: User },
-  { name: "Moderation", href: "/admin/moderation", icon: Shield },
-  { name: "Financial", href: "/admin/financial", icon: DollarSign },
-  { name: "Profile", href: "/admin/profile", icon: User },
-  { name: "Settings", href: "/admin/settings", icon: Settings },
+  { name: "Dashboard",  href: "/admin/dashboard",  icon: Home },
+  { name: "Users",      href: "/admin/users",       icon: User },
+  { name: "Moderation", href: "/admin/moderation",  icon: Shield },
+  { name: "Financial",  href: "/admin/financial",   icon: DollarSign },
+  { name: "Profile",    href: "/admin/profile",     icon: User },
+  { name: "Settings",   href: "/admin/settings",    icon: Settings },
 ];
+
+// ── Logo component ────────────────────────────────────────────────────────────
+function Logo({ className, iconClass, textClass }: {
+  className?: string;
+  iconClass?: string;
+  textClass?: string;
+}) {
+  return (
+    <Link to="/" className={cn("flex items-center gap-2 cursor-pointer", className)}>
+      <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", iconClass)}>
+        <GraduationCap className="h-4 w-4" />
+      </div>
+      <span className={cn("font-display font-bold", textClass)}>Ma'man</span>
+    </Link>
+  );
+}
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileOpen,  setMobileOpen]  = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  // const { user, logout } = useAuthStore();
 
-  // Get user from localStorage with error handling
   const getUserData = () => {
     try {
       const userStr = localStorage.getItem("user");
       if (!userStr) return null;
       return JSON.parse(userStr);
-    } catch (error) {
-      console.error("Error parsing user data:", error);
+    } catch {
       return null;
     }
   };
 
   const user = getUserData();
 
-  // Redirect to login if no user data
   if (!user) {
     navigate("/login");
     return null;
   }
 
-  // Get user data from localStorage
-  const fullName = user?.fullName || "User";
-  const role = user?.role || "Student";
+  const fullName          = user?.fullName        || "User";
+  const role              = user?.role            || "Student";
   const profilePictureUrl = user?.profilePictureUrl;
 
-  // Get initials from full name
   const getInitials = (name: string): string => {
     const parts = name.trim().split(" ");
-    if (parts.length >= 2) {
+    if (parts.length >= 2)
       return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
-    }
     return name.charAt(0).toUpperCase();
   };
 
-  // Determine navigation based on role (case-insensitive and handles variations)
   const getNavigationForRole = (userRole: string) => {
-    const roleLower = userRole.toLowerCase().trim();
-    
-    // Admin role
-    if (roleLower === "admin") {
-      return adminNavigation;
-    }
-    
-    // Content Creator role (handle multiple variations)
-    if (roleLower === "contentcreator" || 
-        roleLower === "content-creator" || 
-        roleLower === "content creator") {
-      return creatorNavigation;
-    }
-    
-    // Specialist role
-    if (roleLower === "specialist") {
-      return specialistNavigation;
-    }
-    
-    // Parent role
-    if (roleLower === "parent") {
-      return parentNavigation;
-    }
-    
-    // Student role (default)
+    const r = userRole.toLowerCase().trim();
+    if (r === "admin") return adminNavigation;
+    if (r === "contentcreator" || r === "content-creator" || r === "content creator") return creatorNavigation;
+    if (r === "specialist") return specialistNavigation;
+    if (r === "parent") return parentNavigation;
     return studentNavigation;
   };
 
-  const navigation = getNavigationForRole(role);
-
-  // Get display role name
   const getDisplayRole = (userRole: string): string => {
-    const roleLower = userRole.toLowerCase().trim();
-    
-    if (roleLower === "admin") return "Admin";
-    if (roleLower === "contentcreator" || roleLower === "content-creator" || roleLower === "content creator") {
-      return "Content Creator";
-    }
-    if (roleLower === "specialist") return "Specialist";
-    if (roleLower === "parent") return "Parent";
+    const r = userRole.toLowerCase().trim();
+    if (r === "admin") return "Admin";
+    if (r === "contentcreator" || r === "content-creator" || r === "content creator") return "Content Creator";
+    if (r === "specialist") return "Specialist";
+    if (r === "parent") return "Parent";
     return "Student";
   };
 
+  const navigation  = getNavigationForRole(role);
   const displayRole = getDisplayRole(role);
 
   const handleLogout = () => {
@@ -169,20 +149,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Mobile Header */}
+
+      {/* ── Mobile Header ─────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-border bg-card px-4 lg:hidden">
         <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)}>
           <Menu className="h-5 w-5" />
         </Button>
-        <Link to="/dashboard" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <GraduationCap className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <span className="font-display font-bold">Ma'man</span>
-        </Link>
+        <Logo
+          iconClass="bg-primary text-primary-foreground"
+          textClass=""
+        />
       </header>
 
-      {/* Mobile Sidebar */}
+      {/* ── Mobile Sidebar ─────────────────────────────────────────────────── */}
       <AnimatePresence>
         {mobileOpen && (
           <>
@@ -201,14 +180,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               className="fixed left-0 top-0 z-50 h-full w-72 bg-sidebar p-6 lg:hidden"
             >
               <div className="flex items-center justify-between mb-8">
-                <Link to="/dashboard" className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary">
-                    <GraduationCap className="h-4 w-4 text-sidebar-primary-foreground" />
-                  </div>
-                  <span className="font-display font-bold text-sidebar-foreground">
-                    Ma'man
-                  </span>
-                </Link>
+                <Logo
+                  iconClass="bg-sidebar-primary text-sidebar-primary-foreground"
+                  textClass="text-sidebar-foreground"
+                />
                 <Button
                   variant="ghost"
                   size="icon"
@@ -253,26 +228,26 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         )}
       </AnimatePresence>
 
-      {/* Desktop Sidebar */}
-      <aside
-        className={cn(
-          "fixed left-0 top-0 z-30 hidden h-screen flex-col bg-sidebar transition-all duration-300 lg:flex",
-          sidebarOpen ? "w-64" : "w-20",
-        )}
-      >
+      {/* ── Desktop Sidebar ────────────────────────────────────────────────── */}
+      <aside className={cn(
+        "fixed left-0 top-0 z-30 hidden h-screen flex-col bg-sidebar transition-all duration-300 lg:flex",
+        sidebarOpen ? "w-64" : "w-20",
+      )}>
         {/* Logo */}
         <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-4">
-          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-sidebar-primary">
-            <GraduationCap className="h-5 w-5 text-sidebar-primary-foreground" />
-          </div>
-          {sidebarOpen && (
-            <span className="font-display text-lg font-bold text-sidebar-foreground">
-              Ma'man
-            </span>
-          )}
+          <Link to="/" className="flex items-center gap-3 cursor-pointer">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-sidebar-primary">
+              <GraduationCap className="h-5 w-5 text-sidebar-primary-foreground" />
+            </div>
+            {sidebarOpen && (
+              <span className="font-display text-lg font-bold text-sidebar-foreground">
+                Ma'man
+              </span>
+            )}
+          </Link>
         </div>
 
-        {/* Navigation */}
+        {/* Nav */}
         <nav className="flex-1 space-y-1 p-4">
           {navigation.map((item) => (
             <Link
@@ -292,14 +267,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           ))}
         </nav>
 
-        {/* User Section */}
+        {/* User */}
         <div className="border-t border-sidebar-border p-4">
-          <div
-            className={cn(
-              "flex items-center gap-3",
-              !sidebarOpen && "justify-center",
-            )}
-          >
+          <div className={cn("flex items-center gap-3", !sidebarOpen && "justify-center")}>
             <Avatar className="h-9 w-9">
               <AvatarImage src={profilePictureUrl} alt={fullName} />
               <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground">
@@ -308,45 +278,30 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </Avatar>
             {sidebarOpen && (
               <div className="flex-1 overflow-hidden">
-                <p className="truncate text-sm font-medium text-sidebar-foreground">
-                  {fullName}
-                </p>
-                <p className="truncate text-xs text-sidebar-foreground/60">
-                  {displayRole}
-                </p>
+                <p className="truncate text-sm font-medium text-sidebar-foreground">{fullName}</p>
+                <p className="truncate text-xs text-sidebar-foreground/60">{displayRole}</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Toggle Button */}
+        {/* Collapse toggle */}
         <Button
           variant="ghost"
           size="icon"
           className="absolute -right-3 top-20 h-6 w-6 rounded-full border border-sidebar-border bg-sidebar text-sidebar-foreground"
           onClick={() => setSidebarOpen(!sidebarOpen)}
         >
-          <ChevronDown
-            className={cn(
-              "h-4 w-4 transition-transform",
-              sidebarOpen ? "rotate-90" : "-rotate-90",
-            )}
-          />
+          <ChevronDown className={cn("h-4 w-4 transition-transform", sidebarOpen ? "rotate-90" : "-rotate-90")} />
         </Button>
       </aside>
 
-      {/* Main Content */}
-      <main
-        className={cn(
-          "min-h-screen transition-all duration-300",
-          sidebarOpen ? "lg:pl-64" : "lg:pl-20",
-        )}
-      >
+      {/* ── Main Content ───────────────────────────────────────────────────── */}
+      <main className={cn("min-h-screen transition-all duration-300", sidebarOpen ? "lg:pl-64" : "lg:pl-20")}>
         {/* Desktop Header */}
         <header className="sticky top-0 z-20 hidden h-16 items-center justify-between border-b border-border bg-card/95 px-6 backdrop-blur lg:flex">
           <h1 className="text-lg font-semibold">
-            {navigation.find((n) => n.href === location.pathname)?.name ||
-              "Dashboard"}
+            {navigation.find((n) => n.href === location.pathname)?.name || "Dashboard"}
           </h1>
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" className="relative">
@@ -355,12 +310,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 3
               </span>
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleLogout}
-              className="text-muted-foreground"
-            >
+            <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground">
               <LogOut className="h-5 w-5" />
             </Button>
           </div>

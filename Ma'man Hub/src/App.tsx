@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./ProtectedRoute.tsx";
+import UnauthorizedPage from "./pages/UnauthorizedPage";
 
 // Auth Pages
 import LoginPage from "./pages/auth/LoginPage";
@@ -19,6 +20,8 @@ import RegistrationPendingPage from "./pages/auth/RegistrationPendingPage";
 
 // Course Pages
 import CoursesCatalogPage from "./pages/courses/CoursesCatalogPage";
+import Categoriespage from "./pages/courses/Categoriespage";
+import WishlistPage from "./pages/courses/Wishlistpage.tsx";
 import CourseDetailPage from "./pages/courses/CourseDetailPage";
 import CoursePlayerPage from "./pages/courses/CoursePlayerPage";
 
@@ -69,19 +72,13 @@ import ParentDashboardPage from "./pages/parent/ParentDashboardPage";
 
 const queryClient = new QueryClient();
 
-const ADMIN = ["Admin"] as const;
-const CREATOR = ["ContentCreator", "Admin"] as const;
-const SPECIALIST = ["Specialist", "Admin"] as const;
-const PARENT = ["Parent", "Admin"] as const;
-const STUDENT_FAMILY = ["Student", "Parent", "Admin"] as const;
-const ALL_AUTHENTICATED = [
-  "Student",
-  "Parent",
-  "Specialist",
-  "ContentCreator",
-  "Admin",
-] as const;
-const BUYERS = ["Student", "Parent", "Admin"] as const;
+const ADMIN             = ["Admin"]                                                         as const;
+const CREATOR           = ["ContentCreator", "Admin"]                                       as const;
+const SPECIALIST        = ["Specialist", "Admin"]                                           as const;
+const PARENT            = ["Parent", "Admin"]                                               as const;
+const STUDENT_FAMILY    = ["Student", "Parent", "Admin"]                                    as const;
+const ALL_AUTHENTICATED = ["Student", "Parent", "Specialist", "ContentCreator", "Admin"]    as const;
+const BUYERS            = ["Student", "Parent", "Admin", "ContentCreator", "Specialist"]    as const;
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -92,9 +89,11 @@ const App = () => (
         <Routes>
           {/* ── Public ───────────────────────────────────────────────────────── */}
           <Route path="/" element={<Index />} />
+          <Route path="/categories" element={<Categoriespage />} />
           <Route path="/courses" element={<CoursesCatalogPage />} />
           <Route path="/courses/:courseId" element={<CourseDetailPage />} />
           <Route path="/profile/:userId" element={<PublicProfilePage />} />
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
           {/* ── Auth (no protection needed) ──────────────────────────────────── */}
           <Route path="/login" element={<LoginPage />} />
@@ -167,11 +166,38 @@ const App = () => (
 
           {/* ── Creator ──────────────────────────────────────────────────────── */}
           <Route
+            path="/content-creator"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...CREATOR]}
+                element={<CreatorDashboardPage />}
+              />
+            }
+          />
+          <Route
+            path="/contentCreator/dashboard"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...CREATOR]}
+                element={<CreatorDashboardPage />}
+              />
+            }
+          />
+          <Route
             path="/creator"
             element={
               <ProtectedRoute
                 allowedRoles={[...CREATOR]}
                 element={<CreatorDashboardPage />}
+              />
+            }
+          />
+          <Route
+            path="/ContentCreator/profile"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...CREATOR]}
+                element={<CreatorProfilePage />}
               />
             }
           />
@@ -185,11 +211,29 @@ const App = () => (
             }
           />
           <Route
+            path="/content-creator/upload"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...CREATOR]}
+                element={<UploadVideoPage />}
+              />
+            }
+          />
+          <Route
             path="/creator/upload"
             element={
               <ProtectedRoute
                 allowedRoles={[...CREATOR]}
                 element={<UploadVideoPage />}
+              />
+            }
+          />
+          <Route
+            path="/content-creator/go-live"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...CREATOR]}
+                element={<GoLivePage />}
               />
             }
           />
@@ -343,6 +387,15 @@ const App = () => (
           />
 
           {/* ── Cart & Checkout ───────────────────────────────────────────────── */}
+          <Route
+            path="/wishlist"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...BUYERS]}
+                element={<WishlistPage />}
+              />
+            }
+          />
           <Route
             path="/cart"
             element={
