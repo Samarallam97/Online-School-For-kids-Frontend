@@ -31,35 +31,54 @@ interface DashboardLayoutProps {
 const studentNavigation = [
   { name: "Dashboard",    href: "/student/dashboard",    icon: Home },
   { name: "My Courses",   href: "/student/my-courses",   icon: BookOpen },
-  // { name: "Messages",     href: "/student/messages",     icon: MessageSquare },
-  // { name: "Group Chats",  href: "/student/groups",       icon: Users },
   { name: "Achievements", href: "/student/achievements", icon: Trophy },
-  // { name: "Profile",      href: "/student/profile",      icon: User },
-  // { name: "Settings",     href: "/student/settings",     icon: Settings },
+  { name: "Messages",     href: "/messages",     icon: MessageSquare },
+  { name: "Group Chats",  href: "/groups",       icon: Users },
+  { name: "Calendar",      href: "/calendar",      icon: Home },
+  { name: "My Bookings",      href: "/bookings",      icon: Home },
+  { name: "My Feeds",      href: "/my-feeds",      icon: Home },
+  { name: "Profile",      href: "/student/profile",      icon: User },
+
+
 ];
 
 const creatorNavigation = [
-  { name: "Dashboard",    href: "/contentCreator/dashboard",  icon: Home },
-  { name: "My Courses",   href: "/content-creator//my-courses",   icon: BookOpen },
-  { name: "Upload Video", href: "/content-creator/upload",    icon: BarChart3 },
-  { name: "Go Live",      href: "/content-creator/go-live",   icon: BookOpen },
-
+  { name: "Dashboard",    href: "/ContentCreator/dashboard",  icon: Home },
+  { name: "My Courses",   href: "/ContentCreator/my-courses",   icon: BookOpen },
+  { name: "Achievements", href: "/ContentCreator/achievements", icon: Trophy },
+  { name: "Upload Video", href: "/ContentCreator/upload",    icon: BarChart3 },
+  { name: "Go Live",      href: "/ContentCreator/go-live",   icon: BookOpen },
+  { name: "Messages",     href: "/messages",     icon: MessageSquare },
+  { name: "Group Chats",  href: "/groups",       icon: Users },
+  { name: "Calendar",      href: "/calendar",      icon: Home },
+  { name: "My Bookings",      href: "/bookings",      icon: Home },
+  { name: "My Feeds",      href: "/my-feeds",      icon: Home },
+  { name: "Profile",      href: "/ContentCreator/profile",      icon: User },
 ];
 
 const specialistNavigation = [
   { name: "Dashboard",   href: "/specialist/dashboard", icon: Home },
   { name: "My Sessions", href: "/specialist/sessions",  icon: BookOpen },
-  { name: "Messages",    href: "/specialist/messages",  icon: MessageSquare },
+  { name: "Achievements", href: "/specialist/achievements", icon: Trophy },
+  { name: "Messages",    href: "/messages",  icon: MessageSquare },
+  { name: "Group Chats",  href: "groups",       icon: Users },
+  { name: "Calendar",      href: "/calendar",      icon: Home },
+  { name: "My Courses",   href: "/specialist/my-courses",   icon: BookOpen },
+  { name: "My Feeds",      href: "/my-feeds",      icon: Home },
   { name: "Profile",     href: "/specialist/profile",   icon: User },
-  { name: "Settings",    href: "/specialist/settings",  icon: Settings },
 ];
 
 const parentNavigation = [
   { name: "Dashboard",   href: "/parent/dashboard", icon: Home },
   { name: "My Children", href: "/parent/children",  icon: Users },
+   { name: "My Courses",   href: "/parent/my-courses",   icon: BookOpen },
+  { name: "Achievements", href: "/parent/achievements", icon: Trophy },
   { name: "Messages",    href: "/parent/messages",  icon: MessageSquare },
+ { name: "Group Chats",  href: "/parent/groups",       icon: Users },
+  { name: "Calendar",      href: "/parent/calendar",      icon: Home },
+  { name: "My Bookings",      href: "/parent/bookings",      icon: Home },
+  { name: "My Feeds",      href: "/parent/my-feeds",      icon: Home },
   { name: "Profile",     href: "/parent/profile",   icon: User },
-  { name: "Settings",    href: "/parent/settings",  icon: Settings },
 ];
 
 const adminNavigation = [
@@ -68,7 +87,6 @@ const adminNavigation = [
   { name: "Moderation", href: "/admin/moderation",  icon: Shield },
   { name: "Financial",  href: "/admin/financial",   icon: DollarSign },
   { name: "Profile",    href: "/admin/profile",     icon: User },
-  { name: "Settings",   href: "/admin/settings",    icon: Settings },
 ];
 
 // ── Logo component ────────────────────────────────────────────────────────────
@@ -124,7 +142,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const getNavigationForRole = (userRole: string) => {
     const r = userRole.toLowerCase().trim();
     if (r === "admin") return adminNavigation;
-    if (r === "contentcreator" || r === "content-creator" || r === "content creator") return creatorNavigation;
+    if (r === "contentcreator" || r === "ContentCreator" || r === "content creator") return creatorNavigation;
     if (r === "specialist") return specialistNavigation;
     if (r === "parent") return parentNavigation;
     return studentNavigation;
@@ -133,7 +151,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const getDisplayRole = (userRole: string): string => {
     const r = userRole.toLowerCase().trim();
     if (r === "admin") return "Admin";
-    if (r === "contentcreator" || r === "content-creator" || r === "content creator") return "Content Creator";
+    if (r === "contentcreator" || r === "ContentCreator" || r === "content creator") return "Content Creator";
     if (r === "specialist") return "Specialist";
     if (r === "parent") return "Parent";
     return "Student";

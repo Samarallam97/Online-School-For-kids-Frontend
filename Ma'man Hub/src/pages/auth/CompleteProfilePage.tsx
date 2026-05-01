@@ -317,7 +317,7 @@ export default function CompleteProfilePage() {
       const rolePathMap: Record<string, string> = {
         Student: "student",
         Parent: "parent",
-        ContentCreator: "content-creator",
+        ContentCreator: "ContentCreator",
         Specialist: "specialist",
         Admin: "admin",
       };

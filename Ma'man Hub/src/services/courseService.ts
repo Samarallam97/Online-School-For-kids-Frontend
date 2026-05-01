@@ -109,7 +109,7 @@ export interface ApiResponse<T> {
 
 // ── Service ───────────────────────────────────────────────────────────────────
 
-export const contentService = {
+export const courseService = {
   getCourses: async (params: GetCoursesParams = {}): Promise<PagedResult<CourseDto>> => {
     const {
       categoryId, ageGroup, minPrice, maxPrice, minRating,
@@ -140,6 +140,10 @@ export const contentService = {
     q.set('pageSize',  String(pageSize));
 
     const res = await api.get<ApiResponse<PagedResult<CourseDto>>>(`/Course?${q.toString()}`);
+    return res.data.data;
+  },
+  getCourseById: async (id: string): Promise<CourseDto> => {
+    const res = await api.get<ApiResponse<CourseDto>>(`/Course/${id}`);
     return res.data.data;
   },
 };

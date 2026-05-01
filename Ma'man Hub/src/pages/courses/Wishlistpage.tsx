@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useCartStore } from "@/stores/cartStore";
-import { AgeGroup, AGE_GROUPS } from "@/services/contentService";
+import { AgeGroup, AGE_GROUPS } from "@/services/courseService";
 import { useWishlistStore } from "@/stores/wishlistStore";
 import api from "@/services/api";
 import { cn } from "@/lib/utils";

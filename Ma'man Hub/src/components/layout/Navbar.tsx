@@ -35,8 +35,12 @@ function getUserFromStorage(): AuthUser | null {
 
 const navigation = [
   { name: "Categories", href: "/categories", icon: Grid2X2 },
+  { name: "Specialists", href: "/specialists", icon: Trophy },
   { name: "Instructors", href: "/instructors", icon: User },
   { name: "Leaderboard", href: "/leaderboard", icon: Trophy },
+  { name: "Feeds", href: "/feeds", icon: Trophy },
+
+
 ];
 
 export function Navbar() {
@@ -202,18 +206,7 @@ export function Navbar() {
                     <DropdownMenuItem onClick={() => navigate(`/${user.role}/dashboard`)}>
                       <LayoutDashboard className="h-4 w-4 mr-2" /> Dashboard
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate(`/${user.role}/profile`)}>
-                      <User className="h-4 w-4 mr-2" /> Profile
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/calendar")}>
-                      <LayoutDashboard className="h-4 w-4 mr-2" /> Calendar
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/messages")}>
-                      <MessageSquare className="h-4 w-4 mr-2" /> Messages
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/groups")}>
-                      <Users className="h-4 w-4 mr-2" /> Groups
-                    </DropdownMenuItem>
+                
 
                     <DropdownMenuSeparator />
                     <DropdownMenuItem

@@ -220,7 +220,7 @@ export default function LoginPage() {
     const rolePathMap: Record<string, string> = {
       Student: "student", student: "student",
       Parent: "parent", parent: "parent",
-      ContentCreator: "content-creator", "content-creator": "content-creator",
+      ContentCreator: "ContentCreator", "ContentCreator": "ContentCreator",
       Specialist: "specialist", specialist: "specialist",
       Admin: "admin", admin: "admin",
     };

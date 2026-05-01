@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { MainLayout } from "@/components/layout/MainLayout";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -111,23 +111,23 @@ export default function SpecialistProfilePage() {
   const addTag = () => { const t = newTag.trim(); if (t && !expertiseTags.includes(t)) setExpertiseTags([...expertiseTags, t]); setNewTag(""); };
 
   if (isLoading) return (
-    <MainLayout>
+    <DashboardLayout>
       <div className="flex h-[400px] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
-    </MainLayout>
+    </DashboardLayout>
   );
 
   if (!userData) return (
-    <MainLayout>
+    <DashboardLayout>
       <div className="flex h-[400px] items-center justify-center">
         <p className="text-muted-foreground">Failed to load profile</p>
       </div>
-    </MainLayout>
+    </DashboardLayout>
   );
 
   return (
-    <MainLayout>
+    <DashboardLayout>
       <div className="mx-auto max-w-6xl space-y-6 p-4 lg:p-6">
 
         {/* Header Card */}
@@ -254,6 +254,6 @@ export default function SpecialistProfilePage() {
           <TabsContent value="billing"><BillingTab /></TabsContent>
         </Tabs>
       </div>
-    </MainLayout>
+    </DashboardLayout>
   );
 }

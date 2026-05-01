@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/accordion";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useCartStore } from "@/stores/cartStore";
-import { contentService, CourseDto } from "@/services/contentService";
+import { courseService, CourseDto } from "@/services/courseService";
 import { cn } from "@/lib/utils";
 
 // ── Types for detail-specific data not in CourseDto ──────────────────────────
@@ -107,7 +107,7 @@ export default function CourseDetailPage() {
     setIsLoading(true);
     setError(null);
 
-    contentService
+    courseService
       .getCourseById(courseId)
       .then((data) => {
         setCourse(data as CourseDetail);
