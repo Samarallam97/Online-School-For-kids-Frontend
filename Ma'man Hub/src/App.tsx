@@ -45,6 +45,7 @@ import AdminUserDetailPage from "@/pages/admin/AdminUserDetailPage";
 
 
 // Creator
+
 import CreatorDashboardPage from "./pages/creator/CreatorDashboardPage";
 import CreatorProfilePage from "./pages/creator/CreatorProfilePage";
 import GoLivePage from "./pages/creator/GoLivePage";
@@ -79,6 +80,7 @@ const PARENT            = ["Parent", "Admin"]                                   
 const STUDENT_FAMILY    = ["Student", "Parent", "Admin"]                                    as const;
 const ALL_AUTHENTICATED = ["Student", "Parent", "Specialist", "ContentCreator", "Admin"]    as const;
 
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -91,23 +93,62 @@ const App = () => (
 
 
           {/* ── Admin ────────────────────────────────────────────────────────── */}
-          <Route path="/admin/dashboard"
-            element={<ProtectedRoute allowedRoles={[...ADMIN]} element={<AdminDashboardPage />} />}
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...ADMIN]}
+                element={<AdminDashboardPage />}
+              />
+            }
           />
-          <Route path="/admin/profile"
-            element={<ProtectedRoute allowedRoles={[...ADMIN]} element={<AdminProfilePage />} />}
+          <Route
+            path="/admin/profile"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...ADMIN]}
+                element={<AdminProfilePage />}
+              />
+            }
           />
           <Route path="/admin/users/:userId"
             element={<ProtectedRoute allowedRoles={[...ADMIN]} element={<AdminUserDetailPage />} />}
           />
-          <Route path="/admin/moderation"
-            element={<ProtectedRoute allowedRoles={[...ADMIN]} element={<ContentModerationPage />} />}
+          <Route
+            path="/admin/users"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...ADMIN]}
+                element={<UserManagementPage />}
+              />
+            }
           />
-          <Route path="/admin/financial"
-            element={<ProtectedRoute allowedRoles={[...ADMIN]} element={<FinancialOverviewPage />} />}
+          <Route
+            path="/admin/users/:userId"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...ADMIN]}
+                element={<AdminUserDetailPage />}
+              />
+            }
           />
-          <Route path="/admin/users"
-            element={<ProtectedRoute allowedRoles={[...ADMIN]} element={<UserManagementPage />} />}
+          <Route
+            path="/admin/moderation"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...ADMIN]}
+                element={<ContentModerationPage />}
+              />
+            }
+          />
+          <Route
+            path="/admin/financial"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...ADMIN]}
+                element={<FinancialOverviewPage />}
+              />
+            }
           />
 
 
@@ -138,21 +179,24 @@ const App = () => (
          <Route path="/course/:courseId/learn"
             element={<ProtectedRoute allowedRoles={[...ALL_AUTHENTICATED]} element={<CoursePlayerPage />} />}
           />
-          <Route path="/course/:courseId/progress"
-            element={<ProtectedRoute allowedRoles={[...ALL_AUTHENTICATED]} element={<CourseProgressPage />} />}
-          />
-          <Route path="/courses"           element={<CoursesCatalogPage />} />
-
-          <Route path="/student/my-courses"   
-            element={<ProtectedRoute allowedRoles={[...STUDENT_FAMILY]}  element={<MyCoursesPage />}/>}
-          />
- 
-          <Route path="/order-confirmation"
-            element={<ProtectedRoute allowedRoles={[...ALL_AUTHENTICATED]} element={<OrderConfirmationPage />} />}
+          <Route
+            path="/course/:courseId/progress"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...ALL_AUTHENTICATED]}
+                element={<CourseProgressPage />}
+              />
+            }
           />
 
-          <Route path="/course/:courseId/quiz/:quizId"
-            element={<ProtectedRoute allowedRoles={[...ALL_AUTHENTICATED]} element={<QuizPage />} />}
+          <Route
+            path="/course/:courseId/quiz/:quizId"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...ALL_AUTHENTICATED]}
+                element={<QuizPage />}
+              />
+            }
           />
           <Route path="/wishlist"
             element={<ProtectedRoute allowedRoles={[...ALL_AUTHENTICATED]} element={<WishlistPage />} />}
@@ -176,11 +220,23 @@ const App = () => (
           />
 
           {/* ── Messages ──────────────────────────────────────────────────────── */}
-          <Route path="/messages"
-            element={<ProtectedRoute allowedRoles={[...ALL_AUTHENTICATED]} element={<MessagesPage />} />}
+          <Route
+            path="/messages"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...ALL_AUTHENTICATED]}
+                element={<MessagesPage />}
+              />
+            }
           />
-          <Route path="/groups"
-            element={<ProtectedRoute allowedRoles={[...ALL_AUTHENTICATED]} element={<GroupChatPage />} />}
+          <Route
+            path="/groups"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...ALL_AUTHENTICATED]}
+                element={<GroupChatPage />}
+              />
+            }
           />
 
           {/* ── Parent ───────────────────────────────────────────────────────── */}
@@ -210,7 +266,6 @@ const App = () => (
 
           <Route path="/unauthorized" element={<UnauthorizedPage />} /> 
           <Route path="*" element={<NotFound />} />
-
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
