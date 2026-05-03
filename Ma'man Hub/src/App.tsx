@@ -19,7 +19,6 @@ import RegistrationPendingPage from "./pages/auth/RegistrationPendingPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import PublicProfilePage from "./pages/auth/PublicProfilePage.tsx";
 
-
 // Course Pages
 import CartPage from "./pages/courses/CartPage";
 import Categoriespage from "./pages/courses/Categoriespage";
@@ -33,8 +32,6 @@ import OrderConfirmationPage from "./pages/courses/OrderConfirmationPage";
 import QuizPage from "./pages/courses/QuizPage";
 import WishlistPage from "./pages/courses/Wishlistpage.tsx";
 
-
-
 // Admin
 import AdminProfilePage from "./pages/admin/AdminProfilePage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
@@ -42,7 +39,6 @@ import FinancialOverviewPage from "./pages/admin/FinancialOverviewPage";
 import UserManagementPage from "./pages/admin/UserManagementPage";
 import ContentModerationPage from "./pages/admin/ContentModerationPage";
 import AdminUserDetailPage from "@/pages/admin/AdminUserDetailPage";
-
 
 // Creator
 
@@ -56,30 +52,37 @@ import UploadVideoPage from "./pages/creator/UploadVideoPage";
 import MessagesPage from "./pages/messages/MessagesPage";
 import GroupChatPage from "./pages/messages/GroupChatPage";
 
-
 // Parent
 import ParentDashboardPage from "./pages/parent/ParentDashboardPage";
 import ParentProfilePage from "./pages/parent/ParentProfilePage";
 
 // Specialist
 import SpecialistProfilePage from "./pages/specialist/SpecialistProfilePage";
-
+import BookSessionPage from "./pages/specialist/BookSessionPage";
+import PublicSpecialistProfilePage from "./pages/specialist/PublicSpecialistProfilePage";
+import SpecialistDashboardPage from "./pages/specialist/SpecialistDashboardPage";
+import SpecialistListingPage from "./pages/specialist/SpecialistListingPage";
+import StudentBookingsPage from "./pages/specialist/StudentBookingsPage";
 
 // Student
 import StudentProfilePage from "./pages/student/StudentProfilePage";
 import StudentDashboardPage from "./pages/student/StudentDashboardPage";
 import AcceptInvitePage from "./pages/student/AcceptInvitePage";
 
-
 const queryClient = new QueryClient();
 
-const ADMIN             = ["Admin"]                                                         as const;
-const CREATOR           = ["ContentCreator", "Admin"]                                       as const;
-const SPECIALIST        = ["Specialist", "Admin"]                                           as const;
-const PARENT            = ["Parent", "Admin"]                                               as const;
-const STUDENT_FAMILY    = ["Student", "Parent", "Admin"]                                    as const;
-const ALL_AUTHENTICATED = ["Student", "Parent", "Specialist", "ContentCreator", "Admin"]    as const;
-
+const ADMIN = ["Admin"] as const;
+const CREATOR = ["ContentCreator", "Admin"] as const;
+const SPECIALIST = ["Specialist", "Admin"] as const;
+const PARENT = ["Parent", "Admin"] as const;
+const STUDENT_FAMILY = ["Student", "Parent", "Admin"] as const;
+const ALL_AUTHENTICATED = [
+  "Student",
+  "Parent",
+  "Specialist",
+  "ContentCreator",
+  "Admin",
+] as const;
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -88,9 +91,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-
-          <Route path="/"                  element={<Index />} />
-
+          <Route path="/" element={<Index />} />
 
           {/* ── Admin ────────────────────────────────────────────────────────── */}
           <Route
@@ -148,33 +149,53 @@ const App = () => (
             }
           />
 
-
           {/* ── Auth (no protection needed) ──────────────────────────────────── */}
-          <Route path="/auth/callback"        element={<AuthCallbackPage />} />
-          <Route path="/complete-profile"     element={<CompleteProfilePage />} />
-          <Route path="/verify-email"         element={<EmailVerificationPage />} />
-          <Route path="/forgot-password"      element={<ForgotPasswordPage />} />
-          <Route path="/login"                element={<LoginPage />} />
-          <Route path="/register"             element={<RegisterPage />} />
-          <Route path="/registration-pending" element={<RegistrationPendingPage />} />
-          <Route path="/reset-password"       element={<ResetPasswordPage />} />
-          <Route path="/profile/:userId"   element={<PublicProfilePage />} />
-
-
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          <Route path="/complete-profile" element={<CompleteProfilePage />} />
+          <Route path="/verify-email" element={<EmailVerificationPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route
+            path="/registration-pending"
+            element={<RegistrationPendingPage />}
+          />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/profile/:userId" element={<PublicProfilePage />} />
 
           {/* ── Course Pages ───────────────────────────────────────────────── */}
-          <Route path="/cart"
-            element={<ProtectedRoute allowedRoles={[...ALL_AUTHENTICATED]} element={<CartPage />} />}
+          <Route
+            path="/cart"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...ALL_AUTHENTICATED]}
+                element={<CartPage />}
+              />
+            }
           />
           <Route path="/categories" element={<Categoriespage />} />
 
-          <Route path="/checkout"
-            element={<ProtectedRoute allowedRoles={[...ALL_AUTHENTICATED]} element={<CheckoutPage />} />}
+<Route path="/courses" element={<CoursesCatalogPage />} />
+
+          <Route
+            path="/checkout"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...ALL_AUTHENTICATED]}
+                element={<CheckoutPage />}
+              />
+            }
           />
           <Route path="/courses/:courseId" element={<CourseDetailPage />} />
 
-         <Route path="/course/:courseId/learn"
-            element={<ProtectedRoute allowedRoles={[...ALL_AUTHENTICATED]} element={<CoursePlayerPage />} />}
+          <Route
+            path="/course/:courseId/learn"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...ALL_AUTHENTICATED]}
+                element={<CoursePlayerPage />}
+              />
+            }
           />
           <Route
             path="/course/:courseId/progress"
@@ -195,25 +216,61 @@ const App = () => (
               />
             }
           />
-          <Route path="/wishlist"
-            element={<ProtectedRoute allowedRoles={[...ALL_AUTHENTICATED]} element={<WishlistPage />} />}
+          <Route
+            path="/wishlist"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...ALL_AUTHENTICATED]}
+                element={<WishlistPage />}
+              />
+            }
           />
 
           {/* ── Creator ──────────────────────────────────────────────────────── */}
-          <Route path="/ContentCreator/dashboard"
-            element={<ProtectedRoute allowedRoles={[...CREATOR]} element={<CreatorDashboardPage />} />}
+          <Route
+            path="/ContentCreator/dashboard"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...CREATOR]}
+                element={<CreatorDashboardPage />}
+              />
+            }
           />
-          <Route path="/ContentCreator/profile"
-            element={<ProtectedRoute allowedRoles={[...CREATOR]} element={<CreatorProfilePage />} />}
+          <Route
+            path="/ContentCreator/profile"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...CREATOR]}
+                element={<CreatorProfilePage />}
+              />
+            }
           />
-          <Route path="/ContentCreator/go-live"
-            element={<ProtectedRoute allowedRoles={[...CREATOR]} element={<GoLivePage />} />}
+          <Route
+            path="/ContentCreator/go-live"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...CREATOR]}
+                element={<GoLivePage />}
+              />
+            }
           />
-          <Route path="/live/:sessionId"
-            element={<ProtectedRoute allowedRoles={[...ALL_AUTHENTICATED]} element={<LiveSessionPage />} />}
+          <Route
+            path="/live/:sessionId"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...ALL_AUTHENTICATED]}
+                element={<LiveSessionPage />}
+              />
+            }
           />
-          <Route path="/ContentCreator/upload"
-            element={<ProtectedRoute allowedRoles={[...CREATOR]} element={<UploadVideoPage />} />}
+          <Route
+            path="/ContentCreator/upload"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...CREATOR]}
+                element={<UploadVideoPage />}
+              />
+            }
           />
 
           {/* ── Messages ──────────────────────────────────────────────────────── */}
@@ -237,31 +294,107 @@ const App = () => (
           />
 
           {/* ── Parent ───────────────────────────────────────────────────────── */}
-          <Route path="/parent/dashboard"
-            element={<ProtectedRoute allowedRoles={[...PARENT]} element={<ParentDashboardPage />} />}
+          <Route
+            path="/parent/dashboard"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...PARENT]}
+                element={<ParentDashboardPage />}
+              />
+            }
           />
-          <Route path="/parent/profile"
-            element={<ProtectedRoute allowedRoles={[...PARENT]} element={<ParentProfilePage />} />}
+          <Route
+            path="/parent/profile"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...PARENT]}
+                element={<ParentProfilePage />}
+              />
+            }
           />
 
           {/* ── Specialist ───────────────────────────────────────────────────── */}
-          <Route path="/specialist/profile"
-            element={<ProtectedRoute allowedRoles={[...SPECIALIST]} element={<SpecialistProfilePage />} />}
+          <Route
+            path="/specialist/profile"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...SPECIALIST]}
+                element={<SpecialistProfilePage />}
+              />
+            }
           />
+
+           <Route
+            path="/specialist/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={[...SPECIALIST]}>
+                <SpecialistDashboardPage />
+             </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/specialist/list"
+            element={
+                <SpecialistListingPage />
+            }
+          />
+
+
+          <Route
+            path="/specialist/profile/:id"
+            element={
+                <PublicSpecialistProfilePage />
+            }
+          />
+
+          <Route
+            path="/specialist/book/:id"
+            element={
+              <ProtectedRoute allowedRoles={[...ALL_AUTHENTICATED]}>
+                <BookSessionPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/specialist/student-bookings"
+            element={
+                <StudentBookingsPage />
+            }
+          />
+
 
           {/* ── Student ──────────────────────────────────────────────────────── */}
-          <Route path="/student/accept-invite"
-            element={<ProtectedRoute allowedRoles={[...STUDENT_FAMILY]} element={<AcceptInvitePage />} />}
+          <Route
+            path="/student/accept-invite"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...STUDENT_FAMILY]}
+                element={<AcceptInvitePage />}
+              />
+            }
           />
 
-          <Route path="/student/dashboard"
-            element={<ProtectedRoute allowedRoles={[...STUDENT_FAMILY]} element={<StudentDashboardPage />} />}
+          <Route
+            path="/student/dashboard"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...STUDENT_FAMILY]}
+                element={<StudentDashboardPage />}
+              />
+            }
           />
-          <Route path="/student/profile"
-            element={<ProtectedRoute allowedRoles={[...STUDENT_FAMILY]} element={<StudentProfilePage />} />}
+          <Route
+            path="/student/profile"
+            element={
+              <ProtectedRoute
+                allowedRoles={[...STUDENT_FAMILY]}
+                element={<StudentProfilePage />}
+              />
+            }
           />
 
-          <Route path="/unauthorized" element={<UnauthorizedPage />} /> 
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
